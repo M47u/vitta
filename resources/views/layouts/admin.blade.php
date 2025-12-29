@@ -284,6 +284,12 @@
                 <span>Pedidos</span>
             </a>
 
+            <a href="{{ route('admin.settings.index') }}"
+                class="sidebar-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                <i class="bi bi-gear-fill"></i>
+                <span>Configuración</span>
+            </a>
+
             <div style="border-top: 1px solid rgba(212, 175, 55, 0.2); margin: 16px 0;"></div>
 
             <a href="{{ route('home') }}" class="sidebar-item">

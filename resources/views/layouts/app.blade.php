@@ -187,20 +187,46 @@
                                     <p style="font-size: 12px; color: rgba(248, 245, 240, 0.6);">{{ auth()->user()->email }}
                                     </p>
                                 </div>
+                                <a href="{{ route('customer.dashboard') }}"
+                                    style="display: block; padding: 12px 16px; color: var(--vitta-pearl); text-decoration: none; font-size: 14px; transition: background 0.3s;"
+                                    onmouseover="this.style.background='rgba(212, 175, 55, 0.1)'"
+                                    onmouseout="this.style.background='transparent'">
+                                    <i class="bi bi-house-door" style="margin-right: 8px;"></i> Mi Cuenta
+                                </a>
+                                <a href="{{ route('customer.orders') }}"
+                                    style="display: block; padding: 12px 16px; color: var(--vitta-pearl); text-decoration: none; font-size: 14px; transition: background 0.3s;"
+                                    onmouseover="this.style.background='rgba(212, 175, 55, 0.1)'"
+                                    onmouseout="this.style.background='transparent'">
+                                    <i class="bi bi-receipt" style="margin-right: 8px;"></i> Mis Pedidos
+                                </a>
+                                <a href="{{ route('customer.wishlist') }}"
+                                    style="display: block; padding: 12px 16px; color: var(--vitta-pearl); text-decoration: none; font-size: 14px; transition: background 0.3s;"
+                                    onmouseover="this.style.background='rgba(212, 175, 55, 0.1)'"
+                                    onmouseout="this.style.background='transparent'">
+                                    <i class="bi bi-heart" style="margin-right: 8px;"></i> Mis Favoritos
+                                </a>
                                 <a href="{{ route('profile.edit') }}"
-                                    style="display: block; padding: 12px 16px; color: var(--vitta-pearl); text-decoration: none; font-size: 14px; transition: background 0.3s;">
-                                    <i class="bi bi-person-circle" style="margin-right: 8px;"></i> Mi Perfil
+                                    style="display: block; padding: 12px 16px; color: var(--vitta-pearl); text-decoration: none; font-size: 14px; transition: background 0.3s;"
+                                    onmouseover="this.style.background='rgba(212, 175, 55, 0.1)'"
+                                    onmouseout="this.style.background='transparent'">
+                                    <i class="bi bi-person-circle" style="margin-right: 8px;"></i> Editar Perfil
                                 </a>
                                 @if(auth()->user()->isAdmin())
+                                    <div style="border-top: 1px solid rgba(212, 175, 55, 0.2); margin: 8px 0;"></div>
                                     <a href="{{ route('admin.dashboard') }}"
-                                        style="display: block; padding: 12px 16px; color: var(--vitta-gold); text-decoration: none; font-size: 14px; transition: background 0.3s;">
+                                        style="display: block; padding: 12px 16px; color: var(--vitta-gold); text-decoration: none; font-size: 14px; transition: background 0.3s;"
+                                        onmouseover="this.style.background='rgba(212, 175, 55, 0.1)'"
+                                        onmouseout="this.style.background='transparent'">
                                         <i class="bi bi-speedometer2" style="margin-right: 8px;"></i> Panel Admin
                                     </a>
                                 @endif
+                                <div style="border-top: 1px solid rgba(212, 175, 55, 0.2); margin: 8px 0;"></div>
                                 <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
                                     @csrf
                                     <button type="submit"
-                                        style="width: 100%; text-align: left; background: none; border: none; padding: 12px 16px; color: #ef4444; cursor: pointer; font-size: 14px; transition: background 0.3s;">
+                                        style="width: 100%; text-align: left; background: none; border: none; padding: 12px 16px; color: #ef4444; cursor: pointer; font-size: 14px; transition: background 0.3s;"
+                                        onmouseover="this.style.background='rgba(239, 68, 68, 0.1)'"
+                                        onmouseout="this.style.background='transparent'">
                                         <i class="bi bi-box-arrow-left" style="margin-right: 8px;"></i> Cerrar Sesión
                                     </button>
                                 </form>

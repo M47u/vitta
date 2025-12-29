@@ -240,7 +240,7 @@
                 <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
                     @foreach($cart->items as $item)
                         <div style="display: flex; gap: 16px;">
-                            <img src="{{ $item->product->main_image ?? 'https://via.placeholder.com/80' }}" 
+                            <img src="{{ $item->product->main_image ? asset('storage/' . $item->product->main_image) : 'https://via.placeholder.com/80' }}" 
                                 alt="{{ $item->product->name }}"
                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
                             <div style="flex: 1;">

@@ -173,7 +173,7 @@
 
                                 <div style="position: relative; overflow: hidden; height: 350px;">
                                     <a href="{{ route('products.show', $product->slug) }}">
-                                        <img src="{{ $product->main_image ?? 'https://via.placeholder.com/400x500/1A1A1A/D4AF37?text=Vitta' }}"
+                                        <img src="{{ $product->main_image ? asset('storage/' . $product->main_image) : 'https://via.placeholder.com/400x500/1A1A1A/D4AF37?text=Vitta' }}"
                                             alt="{{ $product->name }}"
                                             style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease;">
                                     </a>

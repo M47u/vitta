@@ -120,7 +120,7 @@
             @foreach($topProducts as $product)
                 <div
                     style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(212, 175, 55, 0.05); border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.1);">
-                    <img src="{{ $product->main_image ?? '/images/placeholder.jpg' }}"
+                    <img src="{{ $product->main_image ? asset('storage/' . $product->main_image) : '/images/placeholder.jpg' }}"
                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
                     <div style="flex: 1;">
                         <p style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">{{ $product->name }}</p>

@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
+use App\Http\Requests\Product\StoreProductRequest;
+use App\Http\Requests\Product\UpdateProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -31,36 +34,51 @@ class ProductController extends Controller
         return view('admin.products.create', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'long_description' => 'nullable|string',
-            'sku' => 'required|string|unique:products',
-            'base_price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'fragrance_family' => 'required|string',
-            'gender' => 'required|in:unisex,masculine,feminine',
-            'is_featured' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
-        $validated['slug'] = Str::slug($validated['name']);
-        $validated['is_featured'] = $request->has('is_featured');
-        $validated['is_active'] = $request->has('is_active');
+        // Generar slug si no existe
+        if (empty($validated['slug'])) {
+            $validated['slug'] = Str::slug($validated['name']);
+        }
 
-        if ($validated['discount_price'] && $validated['base_price'] > 0) {
+        // Calcular porcentaje de descuento
+        if (!empty($validated['discount_price']) && $validated['base_price'] > 0) {
             $validated['discount_percentage'] = round(
                 (($validated['base_price'] - $validated['discount_price']) / $validated['base_price']) * 100
             );
         }
 
+        // Manejar imágenes
+        $images = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('products', 'public');
+                $images[] = $path;
+            }
+        }
+        $validated['images'] = $images;
+
         $product = Product::create($validated);
 
+        // Crear variantes si existen
+        if ($request->has('variants')) {
+            foreach ($request->variants as $variantData) {
+                $product->variants()->create([
+                    'name' => $variantData['name'],
+                    'sku' => $variantData['sku'],
+                    'ml_size' => $variantData['ml_size'],
+                    'price' => $variantData['price'],
+                    'stock' => $variantData['stock'] ?? 0,
+                    'min_stock' => $variantData['min_stock'] ?? 5,
+                    'is_active' => isset($variantData['is_active']) ? true : false,
+                ]);
+            }
+        }
+
         return redirect()->route('admin.products.index')
-            ->with('success', 'Producto creado exitosamente');
+            ->with('success', 'Producto creado exitosamente con ' . ($request->has('variants') ? count($request->variants) : 0) . ' presentaciones');
     }
 
     public function edit(Product $product)
@@ -69,31 +87,102 @@ class ProductController extends Controller
         return view('admin.products.edit', compact('product', 'categories'));
     }
 
-    public function update(Request $request, Product $product)
+    public function update(UpdateProductRequest $request, Product $product)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'base_price' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'is_active' => 'boolean',
-            'is_featured' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
-        $validated['is_featured'] = $request->has('is_featured');
-        $validated['is_active'] = $request->has('is_active');
+        // Actualizar slug si cambia el nombre
+        if ($validated['name'] !== $product->name && empty($validated['slug'])) {
+            $validated['slug'] = Str::slug($validated['name']);
+        }
+
+        // Calcular porcentaje de descuento
+        if (!empty($validated['discount_price']) && $validated['base_price'] > 0) {
+            $validated['discount_percentage'] = round(
+                (($validated['base_price'] - $validated['discount_price']) / $validated['base_price']) * 100
+            );
+        } else {
+            $validated['discount_percentage'] = null;
+        }
+
+        // Manejar imágenes
+        $images = $request->input('existing_images', []);
+
+        // Eliminar imágenes que no están en existing_images
+        if ($product->images) {
+            foreach ($product->images as $oldImage) {
+                if (!in_array($oldImage, $images)) {
+                    Storage::disk('public')->delete($oldImage);
+                }
+            }
+        }
+
+        // Agregar nuevas imágenes
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('products', 'public');
+                $images[] = $path;
+            }
+        }
+
+        $validated['images'] = array_values($images);
 
         $product->update($validated);
 
+        // Actualizar variantes existentes
+        if ($request->has('existing_variants')) {
+            foreach ($request->existing_variants as $variantId => $variantData) {
+                $variant = $product->variants()->find($variantId);
+                if ($variant) {
+                    $variant->update([
+                        'name' => $variantData['name'],
+                        'sku' => $variantData['sku'],
+                        'ml_size' => $variantData['ml_size'],
+                        'price' => $variantData['price'],
+                        'stock' => $variantData['stock'] ?? 0,
+                        'min_stock' => $variantData['min_stock'] ?? 5,
+                        'is_active' => isset($variantData['is_active']) ? true : false,
+                    ]);
+                }
+            }
+        }
+
+        // Crear nuevas variantes
+        if ($request->has('variants')) {
+            foreach ($request->variants as $variantData) {
+                $product->variants()->create([
+                    'name' => $variantData['name'],
+                    'sku' => $variantData['sku'],
+                    'ml_size' => $variantData['ml_size'],
+                    'price' => $variantData['price'],
+                    'stock' => $variantData['stock'] ?? 0,
+                    'min_stock' => $variantData['min_stock'] ?? 5,
+                    'is_active' => isset($variantData['is_active']) ? true : false,
+                ]);
+            }
+        }
+
+        // Eliminar variantes marcadas para eliminación
+        if ($request->has('delete_variants')) {
+            $product->variants()->whereIn('id', $request->delete_variants)->delete();
+        }
+
         return redirect()->route('admin.products.index')
-            ->with('success', 'Producto actualizado');
+            ->with('success', 'Producto actualizado exitosamente');
     }
 
     public function destroy(Product $product)
     {
+        // Eliminar imágenes del producto
+        if ($product->images) {
+            foreach ($product->images as $image) {
+                Storage::disk('public')->delete($image);
+            }
+        }
+
         $product->delete();
 
         return redirect()->route('admin.products.index')
-            ->with('success', 'Producto eliminado');
+            ->with('success', 'Producto eliminado exitosamente');
     }
 }

@@ -25,7 +25,7 @@ class ProductSeeder extends Seeder
                 'fragrance_family' => 'oriental',
                 'gender' => 'unisex',
                 'is_featured' => true,
-                'images' => ['/images/products/oud-noir-1.jpg', '/images/products/oud-noir-2.jpg'],
+                'images' => ['products/oud-noir-1.jpg', 'products/oud-noir-2.jpg'],
                 'meta_tags' => ['oud', 'premium', 'árabe', 'intenso'],
             ],
             [
@@ -38,7 +38,7 @@ class ProductSeeder extends Seeder
                 'fragrance_family' => 'floral',
                 'gender' => 'unisex',
                 'is_featured' => true,
-                'images' => ['/images/products/musk-1.jpg'],
+                'images' => ['products/musk-1.jpg'],
             ],
             [
                 'name' => 'Bakhoor Royal',
@@ -49,7 +49,7 @@ class ProductSeeder extends Seeder
                 'category_id' => 3,
                 'fragrance_family' => 'woody',
                 'gender' => 'unisex',
-                'images' => ['/images/products/bakhoor-1.jpg'],
+                'images' => ['products/bakhoor-1.jpg'],
             ],
             [
                 'name' => 'Inspo Oud Millésime',
@@ -63,7 +63,7 @@ class ProductSeeder extends Seeder
                 'fragrance_family' => 'oriental',
                 'gender' => 'masculine',
                 'is_featured' => true,
-                'images' => ['/images/products/inspo-1.jpg'],
+                'images' => ['products/inspo-1.jpg'],
             ],
             [
                 'name' => 'Aceite Concentrado Sahara Gold',
@@ -74,7 +74,7 @@ class ProductSeeder extends Seeder
                 'category_id' => 4,
                 'fragrance_family' => 'oriental',
                 'gender' => 'unisex',
-                'images' => ['/images/products/oil-1.jpg'],
+                'images' => ['products/oil-1.jpg'],
             ],
         ];
 

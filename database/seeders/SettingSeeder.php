@@ -1,0 +1,105 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\Setting;
+
+class SettingSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $settings = [
+            // Shop Settings
+            [
+                'key' => 'shop_name',
+                'value' => 'Vitta Perfumes',
+                'type' => 'text',
+                'group' => 'general',
+                'label' => 'Nombre de la Tienda',
+                'description' => 'Nombre que aparecerá en el sitio web',
+            ],
+            [
+                'key' => 'shop_email',
+                'value' => 'contacto@vittaperfumes.com',
+                'type' => 'text',
+                'group' => 'general',
+                'label' => 'Email de Contacto',
+                'description' => 'Email principal para contacto con clientes',
+            ],
+            [
+                'key' => 'shop_phone',
+                'value' => '+54 9 351 123 4567',
+                'type' => 'text',
+                'group' => 'general',
+                'label' => 'Teléfono de Contacto',
+                'description' => 'Número de WhatsApp o teléfono principal',
+            ],
+
+            // Shipping Settings
+            [
+                'key' => 'free_shipping_minimum',
+                'value' => '50000',
+                'type' => 'number',
+                'group' => 'shipping',
+                'label' => 'Mínimo para Envío Gratis',
+                'description' => 'Monto mínimo de compra para acceder a envío gratis (en pesos)',
+            ],
+            [
+                'key' => 'shipping_cost',
+                'value' => '2500',
+                'type' => 'number',
+                'group' => 'shipping',
+                'label' => 'Costo de Envío',
+                'description' => 'Costo fijo de envío cuando no califica para envío gratis',
+            ],
+
+            // Tax Settings
+            [
+                'key' => 'tax_rate',
+                'value' => '21',
+                'type' => 'number',
+                'group' => 'shop',
+                'label' => 'Tasa de IVA (%)',
+                'description' => 'Porcentaje de IVA aplicado a las compras',
+            ],
+
+            // Payment Settings
+            [
+                'key' => 'mercadopago_enabled',
+                'value' => 'true',
+                'type' => 'boolean',
+                'group' => 'payment',
+                'label' => 'MercadoPago Habilitado',
+                'description' => 'Activar o desactivar pagos con MercadoPago',
+            ],
+
+            // Discount Settings
+            [
+                'key' => 'global_discount',
+                'value' => '0',
+                'type' => 'number',
+                'group' => 'shop',
+                'label' => 'Descuento Global (%)',
+                'description' => 'Descuento aplicado a todos los productos (0 para desactivar)',
+            ],
+
+            // Stock Alerts
+            [
+                'key' => 'low_stock_threshold',
+                'value' => '5',
+                'type' => 'number',
+                'group' => 'shop',
+                'label' => 'Umbral de Stock Bajo',
+                'description' => 'Cantidad mínima para mostrar alerta de stock bajo',
+            ],
+        ];
+
+        foreach ($settings as $setting) {
+            Setting::updateOrCreate(
+                ['key' => $setting['key']],
+                $setting
+            );
+        }
+    }
+}

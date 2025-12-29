@@ -22,7 +22,8 @@
                     <th>Producto</th>
                     <th>SKU</th>
                     <th>Categoría</th>
-                    <th>Precio</th>
+                    <th>Presentaciones</th>
+                    <th>Precio Base</th>
                     <th>Estado</th>
                     <th style="text-align: center;">Acciones</th>
                 </tr>
@@ -32,13 +33,37 @@
                     <tr>
                         <td>
                             <div style="display: flex; align-items: center; gap: 12px;">
-                                <img src="{{ $product->main_image ?? 'https://via.placeholder.com/60' }}"
+                                <img src="{{ $product->main_image ? asset('storage/' . $product->main_image) : 'https://via.placeholder.com/60' }}"
                                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
-                                <span style="font-weight: 600;">{{ $product->name }}</span>
+                                <div>
+                                    <span style="font-weight: 600; display: block;">{{ $product->name }}</span>
+                                    @if($product->is_featured)
+                                        <span style="color: #D4AF37; font-size: 11px;">⭐ Destacado</span>
+                                    @endif
+                                </div>
                             </div>
                         </td>
                         <td>{{ $product->sku }}</td>
                         <td>{{ $product->category->name }}</td>
+                        <td>
+                            @if($product->variants->count() > 0)
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    @foreach($product->variants->take(3) as $variant)
+                                        <span style="font-size: 12px; color: rgba(248, 245, 240, 0.8);">
+                                            {{ $variant->ml_size }}ml - ${{ number_format($variant->price, 0, ',', '.') }}
+                                            @if($variant->isLowStock())
+                                                <span style="color: #ef4444;">⚠️</span>
+                                            @endif
+                                        </span>
+                                    @endforeach
+                                    @if($product->variants->count() > 3)
+                                        <span style="font-size: 11px; color: #D4AF37;">+{{ $product->variants->count() - 3 }} más</span>
+                                    @endif
+                                </div>
+                            @else
+                                <span style="color: rgba(248, 245, 240, 0.5); font-size: 12px;">Sin presentaciones</span>
+                            @endif
+                        </td>
                         <td style="color: #D4AF37; font-weight: 700;">${{ number_format($product->current_price, 0, ',', '.') }}
                         </td>
                         <td>
@@ -65,7 +90,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 48px;">No hay productos</td>
+                        <td colspan="7" style="text-align: center; padding: 48px;">No hay productos</td>
                     </tr>
                 @endforelse
             </tbody>

@@ -75,7 +75,7 @@ class ProductController extends Controller
     {
         $product = Product::with([
             'category',
-            'variants' => fn($q) => $q->where('is_active', true),
+            'variants' => fn($q) => $q->where('is_active', true)->orderBy('ml_size', 'asc'),
             'fragranceNotes'
         ])
             ->where('slug', $slug)
@@ -92,6 +92,9 @@ class ProductController extends Controller
             ->limit(4)
             ->get();
 
-        return view('products.show', compact('product', 'relatedProducts'));
+        // Variante por defecto (la primera activa)
+        $defaultVariant = $product->variants->first();
+
+        return view('products.show', compact('product', 'relatedProducts', 'defaultVariant'));
     }
 }

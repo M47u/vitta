@@ -69,6 +69,68 @@
                 </p>
             </div>
 
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;">
+
+                @forelse($featured as $product)
+                    <a href="{{ route('products.show', $product->slug) }}" class="product-card"
+                        style="background: linear-gradient(135deg, rgba(26, 26, 26, 0.9), rgba(42, 42, 42, 0.9)); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; overflow: hidden; text-decoration: none; display: flex; flex-direction: column; transition: all 0.3s;">
+
+                        <div style="position: relative; width: 100%; padding-top: 100%; overflow: hidden;">
+                            @if($product->main_image)
+                                <img src="{{ asset('storage/' . $product->main_image) }}" 
+                                     alt="{{ $product->name }}"
+                                     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">
+                            @else
+                                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a1a, #2a2a2a); display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-image" style="font-size: 48px; color: var(--vitta-gold); opacity: 0.3;"></i>
+                                </div>
+                            @endif
+
+                            @if($product->is_on_sale)
+                                <div style="position: absolute; top: 16px; right: 16px; background: var(--vitta-gold); color: var(--vitta-charcoal); padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">
+                                    -{{ $product->discount_percentage }}%
+                                </div>
+                            @endif
+                        </div>
+
+                        <div style="padding: 24px; flex-grow: 1; display: flex; flex-direction: column;">
+                            <span style="font-size: 12px; color: var(--vitta-gold); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+                                {{ $product->category->name ?? 'Sin categoría' }}
+                            </span>
+
+                            <h3 style="font-size: 18px; color: var(--vitta-pearl); margin-bottom: 8px; font-weight: 600;">
+                                {{ $product->name }}
+                            </h3>
+
+                            <p style="font-size: 14px; color: var(--vitta-pearl); opacity: 0.7; margin-bottom: 16px; line-height: 1.6; flex-grow: 1;">
+                                {{ Str::limit($product->description, 80) }}
+                            </p>
+
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto;">
+                                <div>
+                                    @if($product->is_on_sale)
+                                        <span style="font-size: 14px; color: var(--vitta-pearl); opacity: 0.5; text-decoration: line-through; margin-right: 8px;">
+                                            ${{ number_format($product->base_price, 0, ',', '.') }}
+                                        </span>
+                                    @endif
+                                    <span style="font-size: 24px; color: var(--vitta-gold); font-weight: 700;">
+                                        ${{ number_format($product->current_price, 0, ',', '.') }}
+                                    </span>
+                                </div>
+
+                                <i class="bi bi-arrow-right" style="color: var(--vitta-gold); font-size: 20px;"></i>
+                            </div>
+                        </div>
+                    </a>
+                @empty
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 48px; color: var(--vitta-pearl); opacity: 0.5;">
+                        <i class="bi bi-inbox" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+                        <p>No hay productos destacados disponibles</p>
+                    </div>
+                @endforelse
+
+            </div>
+
         </div>
     </section>
 
@@ -94,7 +156,7 @@
                         style="background: linear-gradient(135deg, rgba(26, 26, 26, 0.9), rgba(42, 42, 42, 0.9)); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; padding: 32px; text-decoration: none; display: flex; flex-direction: column; align-items: center; text-align: center; height: 320px; justify-content: center; position: relative; overflow: hidden;">
 
                         <div
-                            style="position: absolute; inset: 0; background-image: url('{{ $category->image ?? 'https://via.placeholder.com/400x400/2A2A2A/D4AF37?text=' . urlencode($category->name) }}'); background-size: cover; background-position: center; opacity: 0.3; filter: grayscale(50%);">
+                            style="position: absolute; inset: 0; background-image: url('{{ $category->image ? asset('storage/' . $category->image) : 'https://via.placeholder.com/400x400/2A2A2A/D4AF37?text=' . urlencode($category->name) }}'); background-size: cover; background-position: center; opacity: 0.3; filter: grayscale(50%);">
                         </div>
 
                         <div style="position: relative; z-index: 2;">

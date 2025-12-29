@@ -31,7 +31,7 @@
                             <tr>
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 12px;">
-                                        <img src="{{ $item->product->main_image ?? 'https://via.placeholder.com/50' }}"
+                                        <img src="{{ $item->product->main_image ? asset('storage/' . $item->product->main_image) : 'https://via.placeholder.com/50' }}"
                                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
                                         <div>
                                             <p style="font-weight: 600; margin-bottom: 4px;">{{ $item->product_name }}</p>

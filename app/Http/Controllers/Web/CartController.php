@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -140,12 +141,18 @@ class CartController extends Controller
 
         $cart->calculateTotals();
 
+        $freeShippingMinimum = Setting::get('free_shipping_minimum', 50000);
+
         return response()->json([
             'success' => true,
             'message' => 'Carrito actualizado',
             'cart_count' => $cart->getItemsCount(),
+            'cart_subtotal' => number_format($cart->subtotal, 0, ',', '.'),
+            'cart_tax' => number_format($cart->tax, 0, ',', '.'),
             'cart_total' => number_format($cart->total, 0, ',', '.'),
-            'item_subtotal' => $cartItem->exists ? number_format($cartItem->subtotal, 0, ',', '.') : 0
+            'item_subtotal' => $cartItem->exists ? number_format($cartItem->subtotal, 0, ',', '.') : 0,
+            'free_shipping_remaining' => max(0, $freeShippingMinimum - $cart->subtotal),
+            'has_free_shipping' => $cart->subtotal >= $freeShippingMinimum
         ]);
     }
 
