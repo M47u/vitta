@@ -33,7 +33,7 @@ class CustomerController extends Controller
                 ->whereIn('status', ['pending', 'processing'])
                 ->count(),
             'total_spent' => Order::where('user_id', $user->id)
-                ->where('payment_status', 'approved')
+                ->where('payment_status', 'paid')
                 ->sum('total'),
             'wishlist_count' => $user->wishlist()->count(),
         ];
