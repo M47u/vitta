@@ -8,9 +8,11 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Address;
 use App\Models\Transaction;
+use App\Mail\OrderConfirmation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use MercadoPago\SDK;
 use MercadoPago\Preference;
 use MercadoPago\Item;
@@ -340,6 +342,13 @@ class CheckoutController extends Controller
                     // Update order based on payment status
                     if ($payment->status === 'approved') {
                         $order->markAsPaid();
+                        
+                        // Enviar email de confirmación de pedido
+                        try {
+                            Mail::to($order->user->email)->send(new OrderConfirmation($order));
+                        } catch (\Exception $e) {
+                            Log::error('Error sending order confirmation email: ' . $e->getMessage());
+                        }
                     } elseif ($payment->status === 'rejected' || $payment->status === 'cancelled') {
                         $order->update([
                             'payment_status' => $payment->status,

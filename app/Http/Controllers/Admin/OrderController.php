@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Mail\OrderStatusChanged;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -59,10 +62,24 @@ class OrderController extends Controller
     public function updateStatus(Request $request, Order $order)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,processing,shipped,delivered,cancelled'
+            'status' => 'required|in:pending,processing,shipped,delivered,cancelled',
+            'tracking_number' => 'nullable|string|max:255',
         ]);
 
+        // Guardar estado anterior
+        $previousStatus = $order->status;
+
+        // Actualizar orden
         $order->update($validated);
+
+        // Enviar email de cambio de estado solo si el estado cambió
+        if ($previousStatus !== $validated['status']) {
+            try {
+                Mail::to($order->user->email)->send(new OrderStatusChanged($order, $previousStatus));
+            } catch (\Exception $e) {
+                Log::error('Error sending order status email: ' . $e->getMessage());
+            }
+        }
 
         return redirect()->route('admin.orders.show', $order)
             ->with('success', 'Estado de la orden actualizado exitosamente');
@@ -78,7 +95,15 @@ class OrderController extends Controller
                 ->with('error', 'No se puede cancelar una orden que ya fue enviada o entregada');
         }
 
+        $previousStatus = $order->status;
         $order->update(['status' => 'cancelled']);
+
+        // Enviar email de cancelación
+        try {
+            Mail::to($order->user->email)->send(new OrderStatusChanged($order, $previousStatus));
+        } catch (\Exception $e) {
+            Log::error('Error sending cancellation email: ' . $e->getMessage());
+        }
 
         return redirect()->route('admin.orders.show', $order)
             ->with('success', 'Orden cancelada exitosamente');
