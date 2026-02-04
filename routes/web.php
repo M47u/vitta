@@ -33,6 +33,7 @@ Route::prefix('checkout')->name('checkout.')->middleware('auth')->group(function
     Route::get('/', [\App\Http\Controllers\Web\CheckoutController::class, 'index'])->name('index');
     Route::post('/address', [\App\Http\Controllers\Web\CheckoutController::class, 'storeAddress'])->name('address.store');
     Route::get('/payment/{address}', [\App\Http\Controllers\Web\CheckoutController::class, 'payment'])->name('payment');
+    Route::get('/calculate-shipping/{address}', [\App\Http\Controllers\Web\CheckoutController::class, 'calculateShipping'])->name('calculate-shipping');
     Route::post('/process/{address}', [\App\Http\Controllers\Web\CheckoutController::class, 'processOrder'])->name('process');
     Route::get('/success/{order}', [\App\Http\Controllers\Web\CheckoutController::class, 'success'])->name('success');
     Route::get('/failure/{order}', [\App\Http\Controllers\Web\CheckoutController::class, 'failure'])->name('failure');

@@ -15,15 +15,15 @@ class OrderItem extends Model
         'product_id',
         'product_variant_id',
         'product_name',
-        'product_sku',
+        'sku',
         'variant_name',
         'quantity',
-        'unit_price',
+        'price',
         'subtotal',
     ];
 
     protected $casts = [
-        'unit_price' => 'decimal:2',
+        'price' => 'decimal:2',
         'subtotal' => 'decimal:2',
     ];
 

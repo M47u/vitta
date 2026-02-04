@@ -266,21 +266,24 @@
                 <div class="golden-line" style="margin: 24px 0;"></div>
 
                 @php
-                    $subtotal = $cart->items->sum(function($item) {
-                        return ($item->product->discount_price ?? $item->product->base_price) * $item->quantity;
-                    });
+                    $subtotal = $cart->subtotal;
+                    $tax = $cart->tax;
                     $shipping = 2500;
-                    $total = $subtotal + $shipping;
+                    $total = $cart->total + $shipping;
                 @endphp
 
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: var(--vitta-pearl); opacity: 0.7;">Subtotal:</span>
-                        <span style="color: var(--vitta-pearl);">${{ number_format($subtotal, 2) }}</span>
+                        <span style="color: var(--vitta-pearl);">${{ number_format($subtotal, 0, ',', '.') }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--vitta-pearl); opacity: 0.7;">IVA (21%):</span>
+                        <span style="color: var(--vitta-pearl);">${{ number_format($tax, 0, ',', '.') }}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: var(--vitta-pearl); opacity: 0.7;">Envío:</span>
-                        <span style="color: var(--vitta-pearl);">${{ number_format($shipping, 2) }}</span>
+                        <span style="color: var(--vitta-pearl);">${{ number_format($shipping, 0, ',', '.') }}</span>
                     </div>
                 </div>
 
@@ -288,7 +291,7 @@
 
                 <div style="display: flex; justify-content: space-between; font-size: 20px;">
                     <span style="color: var(--vitta-gold); font-weight: 600;">Total:</span>
-                    <span style="color: var(--vitta-gold); font-weight: 600;">${{ number_format($total, 2) }}</span>
+                    <span style="color: var(--vitta-gold); font-weight: 600;">${{ number_format($total, 0, ',', '.') }}</span>
                 </div>
 
                 <p style="color: var(--vitta-pearl); opacity: 0.6; font-size: 12px; margin-top: 24px; text-align: center;">

@@ -41,9 +41,14 @@ class Cart extends Model
 
     public function calculateTotals(): void
     {
-        $this->subtotal = $this->items->sum('subtotal');
-        $this->tax = $this->subtotal * 0.21; // IVA Argentina 21%
-        $this->total = $this->subtotal + $this->tax - $this->discount;
+        // Los precios en el catálogo ya incluyen IVA
+        $totalConIVA = $this->items->sum('subtotal');
+        
+        // Discriminar el IVA (precio con IVA / 1.21 = precio sin IVA)
+        $this->subtotal = $totalConIVA / 1.21; // Subtotal sin IVA
+        $this->tax = $totalConIVA - $this->subtotal; // IVA discriminado
+        $this->total = $totalConIVA - $this->discount; // Total = precio con IVA - descuentos
+        
         $this->save();
     }
 

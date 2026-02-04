@@ -68,6 +68,39 @@
                     <p style="color: var(--vitta-pearl); opacity: 0.7; font-size: 14px;">
                         {{ $address->full_address }}
                     </p>
+
+                    @if(!empty($shippingOptions) && count($shippingOptions) > 0)
+                        <div class="golden-line" style="margin: 20px 0;"></div>
+                        <h4 style="font-size: 16px; color: var(--vitta-gold); margin-bottom: 16px;">
+                            <i class="bi bi-truck" style="margin-right: 8px;"></i>
+                            Opciones de Envío
+                        </h4>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            @foreach($shippingOptions as $index => $option)
+                                <div style="padding: 12px; background: var(--vitta-black); border: 1px solid {{ $index === 0 ? 'var(--vitta-gold)' : 'var(--vitta-gray)' }}; border-radius: 4px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <p style="color: var(--vitta-pearl); font-size: 14px; font-weight: 600; margin-bottom: 4px;">
+                                                {{ ucfirst($option['name'] ?? 'Envío') }}
+                                            </p>
+                                            @if(isset($option['estimated_delivery_time']['shipping']))
+                                                <p style="color: var(--vitta-pearl); opacity: 0.6; font-size: 12px;">
+                                                    Llega en {{ $option['estimated_delivery_time']['shipping'] }} días hábiles
+                                                </p>
+                                            @endif
+                                        </div>
+                                        <p style="color: {{ $index === 0 ? 'var(--vitta-gold)' : 'var(--vitta-pearl)' }}; font-weight: 600;">
+                                            ${{ number_format($option['cost'], 0, ',', '.') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <p style="color: var(--vitta-pearl); opacity: 0.6; font-size: 12px; margin-top: 12px;">
+                            <i class="bi bi-info-circle" style="margin-right: 4px;"></i>
+                            Cotización en tiempo real con MercadoEnvíos
+                        </p>
+                    @endif
                 </div>
 
                 <!-- Payment Options -->
@@ -181,11 +214,15 @@
                     <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
                         <div style="display: flex; justify-content: space-between;">
                             <span style="color: var(--vitta-pearl); opacity: 0.7;">Subtotal:</span>
-                            <span style="color: var(--vitta-pearl);">${{ number_format($subtotal, 2) }}</span>
+                            <span style="color: var(--vitta-pearl);">${{ number_format($subtotal, 0, ',', '.') }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--vitta-pearl); opacity: 0.7;">IVA (21%):</span>
+                            <span style="color: var(--vitta-pearl);">${{ number_format($tax, 0, ',', '.') }}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
                             <span style="color: var(--vitta-pearl); opacity: 0.7;">Envío:</span>
-                            <span style="color: var(--vitta-pearl);">${{ number_format($shipping, 2) }}</span>
+                            <span style="color: var(--vitta-pearl);">${{ number_format($shipping, 0, ',', '.') }}</span>
                         </div>
                     </div>
 
@@ -193,7 +230,7 @@
 
                     <div style="display: flex; justify-content: space-between; font-size: 20px;">
                         <span style="color: var(--vitta-gold); font-weight: 600;">Total:</span>
-                        <span style="color: var(--vitta-gold); font-weight: 600;">${{ number_format($total, 2) }}</span>
+                        <span style="color: var(--vitta-gold); font-weight: 600;">${{ number_format($total, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>

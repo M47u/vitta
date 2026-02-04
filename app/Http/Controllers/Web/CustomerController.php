@@ -47,7 +47,7 @@ class CustomerController extends Controller
     public function orders(Request $request)
     {
         $query = Order::where('user_id', Auth::id())
-            ->with(['items.product', 'items.variant']);
+            ->with(['items.product', 'items.productVariant']);
         
         // Filter by status
         if ($request->filled('status')) {
@@ -75,7 +75,7 @@ class CustomerController extends Controller
     public function orderShow($id)
     {
         $order = Order::where('user_id', Auth::id())
-            ->with(['items.product', 'items.variant', 'address', 'transactions'])
+            ->with(['items.product', 'items.productVariant', 'address', 'transactions'])
             ->findOrFail($id);
         
         return view('customer.orders.show', compact('order'));

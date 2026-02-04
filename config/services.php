@@ -40,4 +40,8 @@ return [
         'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
     ],
 
+    'mercadoenvios' => [
+        'zip_code_from' => env('MERCADOENVIOS_ZIP_CODE_FROM', '1636'),
+    ],
+
 ];

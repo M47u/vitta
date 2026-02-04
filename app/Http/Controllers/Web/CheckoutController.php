@@ -9,13 +9,14 @@ use App\Models\OrderItem;
 use App\Models\Address;
 use App\Models\Transaction;
 use App\Mail\OrderConfirmation;
+use App\Services\MercadoEnviosService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use MercadoPago\SDK;
-use MercadoPago\Preference;
-use MercadoPago\Item;
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Preference\PreferenceClient;
+use MercadoPago\Exceptions\MPApiException;
 
 class CheckoutController extends Controller
 {
@@ -24,7 +25,7 @@ class CheckoutController extends Controller
      */
     public function index()
     {
-        $cart = Cart::with(['items.product', 'items.variant'])
+        $cart = Cart::with(['items.product', 'items.productVariant'])
             ->where('user_id', auth()->id())
             ->first();
 
@@ -73,11 +74,74 @@ class CheckoutController extends Controller
     }
 
     /**
+     * Calculate shipping cost with MercadoEnvíos (AJAX endpoint)
+     */
+    public function calculateShipping(Request $request, $addressId)
+    {
+        try {
+            $cart = Cart::with(['items.product', 'items.productVariant'])
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if (!$cart || $cart->items->isEmpty()) {
+                return response()->json(['error' => 'Carrito vacío'], 400);
+            }
+
+            $address = Address::where('user_id', auth()->id())
+                ->findOrFail($addressId);
+
+            $mercadoEnvios = new MercadoEnviosService();
+            
+            // Calcular dimensiones del paquete
+            $dimensions = $mercadoEnvios->calculatePackageDimensions($cart->items);
+            $dimensions['item_price'] = (int)$cart->total; // Precio para calcular seguro
+
+            // Obtener CP origen desde config
+            $zipCodeFrom = config('services.mercadoenvios.zip_code_from');
+            
+            // Calcular costo de envío
+            $shippingResult = $mercadoEnvios->calculateShipping(
+                $zipCodeFrom,
+                $address->postal_code,
+                $dimensions
+            );
+
+            if ($shippingResult) {
+                return response()->json([
+                    'success' => true,
+                    'cost' => $shippingResult['cost'],
+                    'delivery_time' => $shippingResult['delivery_time'],
+                    'delivery_days' => $shippingResult['delivery_days'],
+                    'options' => $shippingResult['options']
+                ]);
+            }
+
+            // Fallback a costo fijo si falla la API
+            return response()->json([
+                'success' => true,
+                'cost' => 2500,
+                'fallback' => true,
+                'message' => 'Costo de envío estimado'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating shipping: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => true,
+                'cost' => 2500,
+                'fallback' => true,
+                'message' => 'Costo de envío estimado'
+            ]);
+        }
+    }
+
+    /**
      * Show payment method selection
      */
     public function payment($addressId)
     {
-        $cart = Cart::with(['items.product', 'items.variant'])
+        $cart = Cart::with(['items.product', 'items.productVariant'])
             ->where('user_id', auth()->id())
             ->first();
 
@@ -89,16 +153,38 @@ class CheckoutController extends Controller
         $address = Address::where('user_id', auth()->id())
             ->findOrFail($addressId);
 
-        // Calculate totals
-        $subtotal = $cart->items->sum(function ($item) {
-            $price = $item->product->discount_price ?? $item->product->base_price;
-            return $price * $item->quantity;
-        });
+        // Use cart's calculated totals (includes IVA)
+        $cart->calculateTotals();
+        $subtotal = $cart->subtotal;
+        $tax = $cart->tax;
+        
+        // Calcular envío con MercadoEnvíos
+        $mercadoEnvios = new MercadoEnviosService();
+        $dimensions = $mercadoEnvios->calculatePackageDimensions($cart->items);
+        $dimensions['item_price'] = (int)$cart->total;
+        
+        $zipCodeFrom = config('services.mercadoenvios.zip_code_from');
+        $shippingResult = $mercadoEnvios->calculateShipping(
+            $zipCodeFrom,
+            $address->postal_code,
+            $dimensions
+        );
+        
+        // Usar costo real o fallback a $2500
+        $shipping = $shippingResult ? $shippingResult['cost'] : 2500;
+        $shippingOptions = $shippingResult['options'] ?? [];
+        
+        $total = $cart->total + $shipping;
 
-        $shipping = 2500; // Fixed shipping cost (AR$ 2,500)
-        $total = $subtotal + $shipping;
-
-        return view('checkout.payment', compact('cart', 'address', 'subtotal', 'shipping', 'total'));
+        return view('checkout.payment', compact(
+            'cart', 
+            'address', 
+            'subtotal', 
+            'tax', 
+            'shipping', 
+            'total',
+            'shippingOptions'
+        ));
     }
 
     /**
@@ -109,21 +195,32 @@ class CheckoutController extends Controller
         try {
             DB::beginTransaction();
 
-            $cart = Cart::with(['items.product', 'items.variant'])
+            $cart = Cart::with(['items.product', 'items.productVariant'])
                 ->where('user_id', auth()->id())
                 ->firstOrFail();
 
             $address = Address::where('user_id', auth()->id())
                 ->findOrFail($addressId);
 
-            // Calculate totals
-            $subtotal = $cart->items->sum(function ($item) {
-                $price = $item->product->discount_price ?? $item->product->base_price;
-                return $price * $item->quantity;
-            });
-
-            $shipping = 2500;
-            $total = $subtotal + $shipping;
+            // Use cart's calculated totals (includes IVA)
+            $cart->calculateTotals();
+            $subtotal = $cart->subtotal;
+            $tax = $cart->tax;
+            
+            // Calcular envío con MercadoEnvíos
+            $mercadoEnvios = new MercadoEnviosService();
+            $dimensions = $mercadoEnvios->calculatePackageDimensions($cart->items);
+            $dimensions['item_price'] = (int)$cart->total;
+            
+            $zipCodeFrom = config('services.mercadoenvios.zip_code_from');
+            $shippingResult = $mercadoEnvios->calculateShipping(
+                $zipCodeFrom,
+                $address->postal_code,
+                $dimensions
+            );
+            
+            $shipping = $shippingResult ? $shippingResult['cost'] : 2500;
+            $total = $cart->total + $shipping;
 
             // Create order
             $order = Order::create([
@@ -134,6 +231,7 @@ class CheckoutController extends Controller
                 'payment_status' => 'pending',
                 'payment_method' => 'mercadopago',
                 'subtotal' => $subtotal,
+                'tax' => $tax,
                 'shipping' => $shipping,
                 'total' => $total,
                 'shipping_address' => [
@@ -153,10 +251,10 @@ class CheckoutController extends Controller
                     'product_id' => $cartItem->product_id,
                     'product_variant_id' => $cartItem->product_variant_id,
                     'product_name' => $cartItem->product->name,
-                    'product_sku' => $cartItem->product->sku,
-                    'variant_name' => $cartItem->variant ? $cartItem->variant->name : null,
+                    'sku' => $cartItem->product->sku,
+                    'variant_name' => $cartItem->productVariant ? $cartItem->productVariant->name : null,
                     'quantity' => $cartItem->quantity,
-                    'unit_price' => $price,
+                    'price' => $price,
                     'subtotal' => $price * $cartItem->quantity,
                 ]);
             }
@@ -210,57 +308,67 @@ class CheckoutController extends Controller
     private function createMercadoPagoPreference(Order $order)
     {
         try {
-            // Initialize SDK
-            SDK::setAccessToken(config('services.mercadopago.access_token'));
-
-            $preference = new Preference();
-
-            // Set items
-            $items = [];
-            foreach ($order->items as $orderItem) {
-                $item = new Item();
-                $item->title = $orderItem->product_name . ($orderItem->variant_name ? ' - ' . $orderItem->variant_name : '');
-                $item->quantity = $orderItem->quantity;
-                $item->unit_price = (float) $orderItem->unit_price;
-                $items[] = $item;
+            $accessToken = config('services.mercadopago.access_token');
+            
+            if (empty($accessToken)) {
+                Log::error('MercadoPago access token is not configured');
+                return null;
             }
 
-            // Add shipping as item
-            $shippingItem = new Item();
-            $shippingItem->title = 'Envío';
-            $shippingItem->quantity = 1;
-            $shippingItem->unit_price = (float) $order->shipping;
-            $items[] = $shippingItem;
+            // Initialize SDK
+            MercadoPagoConfig::setAccessToken($accessToken);
 
-            $preference->items = $items;
+            $client = new PreferenceClient();
 
-            // Set payer info
-            $preference->payer = [
-                'name' => $order->user->name,
-                'email' => $order->user->email,
+            // Calcular el total a cobrar (subtotal + IVA + envío)
+            $totalAmount = $order->total;
+
+            // Crear un solo item con el total de la orden
+            $items = [
+                [
+                    'title' => 'Pedido #' . $order->order_number . ' - Vitta Perfumes',
+                    'description' => $order->items->count() . ' producto(s)',
+                    'quantity' => 1,
+                    'unit_price' => (float) $totalAmount,
+                    'currency_id' => 'ARS',
+                ]
             ];
 
-            // Set URLs
-            $preference->back_urls = [
-                'success' => route('checkout.success', ['order' => $order->id]),
-                'failure' => route('checkout.failure', ['order' => $order->id]),
-                'pending' => route('checkout.pending', ['order' => $order->id]),
+            $preferenceData = [
+                'items' => $items,
+                'payer' => [
+                    'name' => $order->user->name,
+                    'email' => $order->user->email,
+                ],
+                'back_urls' => [
+                    'success' => route('checkout.success', ['order' => $order->id]),
+                    'failure' => route('checkout.failure', ['order' => $order->id]),
+                    'pending' => route('checkout.pending', ['order' => $order->id]),
+                ],
+                'external_reference' => $order->order_number,
+                'statement_descriptor' => 'VITTA PERFUMES',
             ];
 
-            $preference->auto_return = 'approved';
+            Log::info('Creating MercadoPago preference', ['data' => $preferenceData]);
 
-            // Set external reference
-            $preference->external_reference = $order->order_number;
+            // Create preference
+            $preference = $client->create($preferenceData);
 
-            // Set notification URL for webhooks
-            $preference->notification_url = route('mercadopago.webhook');
-
-            $preference->save();
+            Log::info('MercadoPago preference created', ['preference_id' => $preference->id]);
 
             return $preference;
 
+        } catch (MPApiException $e) {
+            Log::error('MercadoPago API Error: ' . $e->getMessage());
+            Log::error('Status Code: ' . $e->getStatusCode());
+            $response = $e->getApiResponse();
+            if ($response) {
+                Log::error('API Response: ' . json_encode($response->getContent()));
+            }
+            return null;
         } catch (\Exception $e) {
             Log::error('Error creating MercadoPago preference: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return null;
         }
     }
