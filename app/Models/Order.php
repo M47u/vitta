@@ -108,7 +108,7 @@ class Order extends Model
     public static function generateOrderNumber(): string
     {
         do {
-            $number = 'VP-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
+            $number = 'VP-' . now()->format('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
         } while (self::where('order_number', $number)->exists());
 
         return $number;

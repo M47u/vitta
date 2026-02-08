@@ -99,29 +99,21 @@ class CheckoutController extends Controller
             // Obtener CP origen desde config
             $zipCodeFrom = config('services.mercadoenvios.zip_code_from');
             
-            // Calcular costo de envío
-            $shippingResult = $mercadoEnvios->calculateShipping(
+            // Calcular costo de envío usando el método configurado
+            $shippingResult = $mercadoEnvios->calculateShippingCost(
                 $zipCodeFrom,
                 $address->postal_code,
                 $dimensions
             );
 
-            if ($shippingResult) {
-                return response()->json([
-                    'success' => true,
-                    'cost' => $shippingResult['cost'],
-                    'delivery_time' => $shippingResult['delivery_time'],
-                    'delivery_days' => $shippingResult['delivery_days'],
-                    'options' => $shippingResult['options']
-                ]);
-            }
-
-            // Fallback a costo fijo si falla la API
             return response()->json([
                 'success' => true,
-                'cost' => 2500,
-                'fallback' => true,
-                'message' => 'Costo de envío estimado'
+                'cost' => $shippingResult['cost'],
+                'method' => $shippingResult['method'],
+                'delivery_time' => $shippingResult['details']['delivery_time'] ?? null,
+                'delivery_days' => $shippingResult['details']['delivery_days'] ?? null,
+                'options' => $shippingResult['details']['options'] ?? [],
+                'message' => $shippingResult['details']['message'] ?? null
             ]);
 
         } catch (\Exception $e) {
@@ -130,7 +122,7 @@ class CheckoutController extends Controller
             return response()->json([
                 'success' => true,
                 'cost' => 2500,
-                'fallback' => true,
+                'method' => 'fallback',
                 'message' => 'Costo de envío estimado'
             ]);
         }
@@ -158,21 +150,21 @@ class CheckoutController extends Controller
         $subtotal = $cart->subtotal;
         $tax = $cart->tax;
         
-        // Calcular envío con MercadoEnvíos
+        // Calcular envío usando el método configurado
         $mercadoEnvios = new MercadoEnviosService();
         $dimensions = $mercadoEnvios->calculatePackageDimensions($cart->items);
         $dimensions['item_price'] = (int)$cart->total;
         
         $zipCodeFrom = config('services.mercadoenvios.zip_code_from');
-        $shippingResult = $mercadoEnvios->calculateShipping(
+        $shippingResult = $mercadoEnvios->calculateShippingCost(
             $zipCodeFrom,
             $address->postal_code,
             $dimensions
         );
         
-        // Usar costo real o fallback a $2500
-        $shipping = $shippingResult ? $shippingResult['cost'] : 2500;
-        $shippingOptions = $shippingResult['options'] ?? [];
+        $shipping = $shippingResult['cost'];
+        $shippingMethod = $shippingResult['method'];
+        $shippingOptions = $shippingResult['details']['options'] ?? [];
         
         $total = $cart->total + $shipping;
 
@@ -207,19 +199,19 @@ class CheckoutController extends Controller
             $subtotal = $cart->subtotal;
             $tax = $cart->tax;
             
-            // Calcular envío con MercadoEnvíos
+            // Calcular envío usando el método configurado
             $mercadoEnvios = new MercadoEnviosService();
             $dimensions = $mercadoEnvios->calculatePackageDimensions($cart->items);
             $dimensions['item_price'] = (int)$cart->total;
             
             $zipCodeFrom = config('services.mercadoenvios.zip_code_from');
-            $shippingResult = $mercadoEnvios->calculateShipping(
+            $shippingResult = $mercadoEnvios->calculateShippingCost(
                 $zipCodeFrom,
                 $address->postal_code,
                 $dimensions
             );
             
-            $shipping = $shippingResult ? $shippingResult['cost'] : 2500;
+            $shipping = $shippingResult['cost'];
             $total = $cart->total + $shipping;
 
             // Create order

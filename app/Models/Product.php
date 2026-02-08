@@ -32,6 +32,10 @@ class Product extends Model
         'is_active',
         'images',
         'meta_tags',
+        'package_width',
+        'package_height',
+        'package_length',
+        'package_weight',
     ];
 
     protected $casts = [
@@ -41,6 +45,10 @@ class Product extends Model
         'is_active' => 'boolean',
         'images' => 'array',
         'meta_tags' => 'array',
+        'package_width' => 'decimal:2',
+        'package_height' => 'decimal:2',
+        'package_length' => 'decimal:2',
+        'package_weight' => 'integer',
     ];
 
     protected static function boot()

@@ -53,6 +53,30 @@ class SettingSeeder extends Seeder
                 'label' => 'Costo de Envío',
                 'description' => 'Costo fijo de envío cuando no califica para envío gratis',
             ],
+            [
+                'key' => 'shipping_method',
+                'value' => 'mercadoenvios',
+                'type' => 'select',
+                'group' => 'shipping',
+                'label' => 'Método de Cálculo de Envío',
+                'description' => 'mercadoenvios: API MercadoEnvíos, weight: Por peso, fixed: Costo fijo',
+            ],
+            [
+                'key' => 'shipping_base_cost',
+                'value' => '1500',
+                'type' => 'number',
+                'group' => 'shipping',
+                'label' => 'Costo Base de Envío (Por Peso)',
+                'description' => 'Costo base para cálculo por peso (hasta 500g)',
+            ],
+            [
+                'key' => 'shipping_cost_per_kg',
+                'value' => '800',
+                'type' => 'number',
+                'group' => 'shipping',
+                'label' => 'Costo por KG Adicional',
+                'description' => 'Costo adicional por cada kg sobre el peso base',
+            ],
 
             // Tax Settings
             [
