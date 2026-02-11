@@ -36,8 +36,22 @@ return [
     ],
 
     'mercadopago' => [
-        'public_key' => env('MERCADOPAGO_PUBLIC_KEY'),
-        'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
+        'sandbox' => env('MERCADOPAGO_SANDBOX', true),
+
+        // Selecciona automáticamente las credenciales según el modo (sandbox o producción)
+        'public_key' => env('MERCADOPAGO_SANDBOX', true)
+            ? env('MERCADOPAGO_TEST_PUBLIC_KEY')
+            : env('MERCADOPAGO_PROD_PUBLIC_KEY'),
+
+        'access_token' => env('MERCADOPAGO_SANDBOX', true)
+            ? env('MERCADOPAGO_TEST_ACCESS_TOKEN')
+            : env('MERCADOPAGO_PROD_ACCESS_TOKEN'),
+
+        // Credenciales individuales (para referencia)
+        'test_public_key' => env('MERCADOPAGO_TEST_PUBLIC_KEY'),
+        'test_access_token' => env('MERCADOPAGO_TEST_ACCESS_TOKEN'),
+        'prod_public_key' => env('MERCADOPAGO_PROD_PUBLIC_KEY'),
+        'prod_access_token' => env('MERCADOPAGO_PROD_ACCESS_TOKEN'),
     ],
 
     'mercadoenvios' => [

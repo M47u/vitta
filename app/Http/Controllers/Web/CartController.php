@@ -61,7 +61,16 @@ class CartController extends Controller
         }
 
         $cart = $this->getOrCreateCart();
-        $price = $variant ? $variant->price : $product->current_price;
+
+        // Calcular precio aplicando descuento del producto a la variante si existe
+        if ($variant) {
+            // Si el producto tiene descuento, aplicarlo a la variante
+            $price = $product->is_on_sale
+                ? $variant->price * ($product->current_price / $product->base_price)
+                : $variant->price;
+        } else {
+            $price = $product->current_price;
+        }
 
         // Verificar si ya existe el item
         $cartItem = CartItem::where('cart_id', $cart->id)

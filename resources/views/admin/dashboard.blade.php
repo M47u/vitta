@@ -93,7 +93,7 @@
                     @foreach($recentOrders as $order)
                         <tr>
                             <td style="color: #D4AF37; font-weight: 600;">#{{ $order->order_number }}</td>
-                            <td>{{ $order->user->name }}</td>
+                            <td>{{ $order->user ? $order->user->name : ($order->guest_name ?? 'Invitado') }}</td>
                             <td>${{ number_format($order->total, 0, ',', '.') }}</td>
                             <td>
                                 <span class="badge badge-warning">{{ $order->status }}</span>

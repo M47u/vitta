@@ -15,6 +15,8 @@ class Order extends Model
     protected $fillable = [
         'order_number',
         'user_id',
+        'guest_email',
+        'guest_name',
         'address_id',
         'status',
         'payment_status',
@@ -121,6 +123,32 @@ class Order extends Model
             'status' => 'paid',
             'paid_at' => now(),
         ]);
+
+        // Descontar stock de los productos vendidos
+        $this->decrementStock();
+    }
+
+    /**
+     * Decrement stock for all order items
+     */
+    private function decrementStock(): void
+    {
+        foreach ($this->items as $item) {
+            if ($item->product_variant_id) {
+                // Si es una variante, descontar stock de la variante
+                $variant = ProductVariant::find($item->product_variant_id);
+                if ($variant && $variant->stock >= $item->quantity) {
+                    $variant->decrement('stock', $item->quantity);
+                }
+            } else {
+                // Si no es variante, descontar del producto directamente (si tuviera stock)
+                $product = Product::find($item->product_id);
+                if ($product) {
+                    // Los productos sin variantes no tienen stock en este sistema
+                    // pero dejamos la lógica por si se implementa en el futuro
+                }
+            }
+        }
     }
 
     public function markAsShipped(): void
@@ -141,9 +169,33 @@ class Order extends Model
 
     public function cancel(): void
     {
+        // Solo restaurar stock si la orden estaba pagada
+        $wasPaid = $this->payment_status === 'approved';
+
         $this->update([
             'status' => 'cancelled',
             'payment_status' => 'cancelled',
         ]);
+
+        // Restaurar stock si la orden ya había sido pagada
+        if ($wasPaid) {
+            $this->restoreStock();
+        }
+    }
+
+    /**
+     * Restore stock for all order items (when order is cancelled or refunded)
+     */
+    private function restoreStock(): void
+    {
+        foreach ($this->items as $item) {
+            if ($item->product_variant_id) {
+                // Si es una variante, restaurar stock de la variante
+                $variant = ProductVariant::find($item->product_variant_id);
+                if ($variant) {
+                    $variant->increment('stock', $item->quantity);
+                }
+            }
+        }
     }
 }

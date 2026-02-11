@@ -53,8 +53,12 @@
                         </td>
                         <td>
                             <div>
-                                <p style="font-weight: 600; margin-bottom: 4px;">{{ $order->user->name }}</p>
-                                <p style="font-size: 12px; color: rgba(248, 245, 240, 0.6);">{{ $order->user->email }}</p>
+                                <p style="font-weight: 600; margin-bottom: 4px;">
+                                    {{ $order->user ? $order->user->name : ($order->guest_name ?? 'Invitado') }}
+                                </p>
+                                <p style="font-size: 12px; color: rgba(248, 245, 240, 0.6);">
+                                    {{ $order->user ? $order->user->email : ($order->guest_email ?? 'N/A') }}
+                                </p>
                             </div>
                         </td>
                         <td>

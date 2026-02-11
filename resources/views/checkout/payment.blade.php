@@ -110,17 +110,18 @@
                         Seleccionar Método de Pago
                     </h3>
 
-                    <div style="margin-bottom: 24px;">
+                    <!-- MercadoPago Option -->
+                    <div style="margin-bottom: 16px;">
                         <label
-                            style="display: flex; align-items: center; padding: 20px; border: 2px solid var(--vitta-gold); border-radius: 8px; cursor: pointer; background: rgba(212, 175, 55, 0.05);">
+                            id="mercadopago-label"
+                            style="display: flex; align-items: center; padding: 20px; border: 2px solid var(--vitta-gold); border-radius: 8px; cursor: pointer; background: rgba(212, 175, 55, 0.05); transition: all 0.3s;">
                             <input type="radio" name="payment_method" value="mercadopago" checked
                                 style="margin-right: 16px; width: 20px; height: 20px;">
                             <div style="flex: 1;">
                                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                                    <svg width="120" height="30" viewBox="0 0 120 30" fill="none">
-                                        <text x="0" y="20" fill="#009ee3" font-family="Arial" font-size="16"
-                                            font-weight="bold">MercadoPago</text>
-                                    </svg>
+                                    <i class="bi bi-credit-card-2-front" style="font-size: 24px; color: #009ee3;"></i>
+                                    <span style="font-size: 18px; font-weight: 600; color: var(--vitta-pearl);">MercadoPago</span>
+                                    <span style="background: #fbbf24; color: var(--vitta-black); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">-7.5% COM.</span>
                                 </div>
                                 <p style="color: var(--vitta-pearl); opacity: 0.7; font-size: 13px;">
                                     Tarjetas de crédito, débito y otros medios de pago
@@ -129,6 +130,26 @@
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                                 <img src="https://imgmp.mlstatic.com/org-img/banners/ar/medios/online/575X40.jpg"
                                     alt="Medios de pago" style="height: 30px; border-radius: 4px;">
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Bank Transfer Option -->
+                    <div style="margin-bottom: 24px;">
+                        <label
+                            id="transfer-label"
+                            style="display: flex; align-items: center; padding: 20px; border: 2px solid var(--vitta-gray); border-radius: 8px; cursor: pointer; background: transparent; transition: all 0.3s;">
+                            <input type="radio" name="payment_method" value="transfer"
+                                style="margin-right: 16px; width: 20px; height: 20px;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                    <i class="bi bi-bank2" style="font-size: 24px; color: var(--vitta-gold);"></i>
+                                    <span style="font-size: 18px; font-weight: 600; color: var(--vitta-pearl);">Transferencia Bancaria</span>
+                                    <span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">SIN COMISIÓN</span>
+                                </div>
+                                <p style="color: var(--vitta-pearl); opacity: 0.7; font-size: 13px;">
+                                    Te enviaremos los datos bancarios para que realices la transferencia
+                                </p>
                             </div>
                         </label>
                     </div>
@@ -243,32 +264,65 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const checkoutBtn = document.getElementById('checkout-btn');
+            const paymentMethodRadios = document.querySelectorAll('input[name="payment_method"]');
+            const mercadopagoLabel = document.getElementById('mercadopago-label');
+            const transferLabel = document.getElementById('transfer-label');
+
+            // Handle payment method selection styling
+            paymentMethodRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'mercadopago') {
+                        mercadopagoLabel.style.border = '2px solid var(--vitta-gold)';
+                        mercadopagoLabel.style.background = 'rgba(212, 175, 55, 0.05)';
+                        transferLabel.style.border = '2px solid var(--vitta-gray)';
+                        transferLabel.style.background = 'transparent';
+                        checkoutBtn.innerHTML = '<i class="bi bi-lock-fill"></i> PROCEDER AL PAGO';
+                    } else if (this.value === 'transfer') {
+                        transferLabel.style.border = '2px solid var(--vitta-gold)';
+                        transferLabel.style.background = 'rgba(212, 175, 55, 0.05)';
+                        mercadopagoLabel.style.border = '2px solid var(--vitta-gray)';
+                        mercadopagoLabel.style.background = 'transparent';
+                        checkoutBtn.innerHTML = '<i class="bi bi-bank2"></i> CONFIRMAR Y VER DATOS BANCARIOS';
+                    }
+                });
+            });
 
             checkoutBtn.addEventListener('click', async function () {
+                const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+                const notes = document.getElementById('order-notes').value;
+
                 // Disable button
                 checkoutBtn.disabled = true;
                 checkoutBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
 
                 try {
-                    const notes = document.getElementById('order-notes').value;
-
                     // Make request to process order
-                    const response = await fetch('{{ route("checkout.process", $address->id) }}', {
+                    const response = await fetch('{{ route("checkout.process", $addressId) }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
                         body: JSON.stringify({
+                            payment_method: paymentMethod,
                             notes: notes
                         })
                     });
 
                     const data = await response.json();
 
-                    if (data.success && data.init_point) {
-                        // Redirect to MercadoPago
-                        window.location.href = data.init_point;
+                    if (data.success) {
+                        if (paymentMethod === 'mercadopago' && data.init_point) {
+                            // Abrir MercadoPago en nueva pestaña
+                            window.open(data.init_point, '_blank');
+                            checkoutBtn.innerHTML = '<i class="bi bi-check-circle"></i> Pedido creado - Completá el pago en la nueva pestaña';
+                            checkoutBtn.style.background = '#10b981';
+                        } else if (paymentMethod === 'transfer' && data.redirect_url) {
+                            // Redirigir a página con datos bancarios
+                            window.location.href = data.redirect_url;
+                        } else {
+                            throw new Error(data.message || 'Error al procesar el pago');
+                        }
                     } else {
                         throw new Error(data.message || 'Error al procesar el pago');
                     }
@@ -279,7 +333,12 @@
 
                     // Re-enable button
                     checkoutBtn.disabled = false;
-                    checkoutBtn.innerHTML = '<i class="bi bi-lock-fill"></i> PROCEDER AL PAGO';
+                    const currentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+                    if (currentMethod === 'transfer') {
+                        checkoutBtn.innerHTML = '<i class="bi bi-bank2"></i> CONFIRMAR Y VER DATOS BANCARIOS';
+                    } else {
+                        checkoutBtn.innerHTML = '<i class="bi bi-lock-fill"></i> PROCEDER AL PAGO';
+                    }
                 }
             });
         });

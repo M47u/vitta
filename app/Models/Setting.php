@@ -35,11 +35,16 @@ class Setting extends Model
     /**
      * Set a setting value
      */
-    public static function set(string $key, $value): void
+    public static function set(string $key, $value, string $label = null, string $type = 'text', string $group = 'general'): void
     {
         $setting = self::updateOrCreate(
             ['key' => $key],
-            ['value' => $value]
+            [
+                'value' => $value,
+                'label' => $label ?? ucfirst(str_replace('_', ' ', $key)),
+                'type' => $type,
+                'group' => $group,
+            ]
         );
 
         Cache::forget("setting.{$key}");

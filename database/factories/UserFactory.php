@@ -23,12 +23,23 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        // Crear rol por defecto si no existe
+        $role = \App\Models\Role::firstOrCreate(
+            ['id' => 2],
+            [
+                'name' => 'Customer',
+                'slug' => 'customer',
+                'description' => 'Cliente de la tienda',
+            ]
+        );
+        
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role_id' => $role->id,
         ];
     }
 

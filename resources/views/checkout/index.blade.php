@@ -86,6 +86,20 @@
             <form method="POST" action="{{ route('checkout.address.store') }}" style="display: flex; flex-direction: column; gap: 20px;">
                 @csrf
 
+                @guest
+                    <div>
+                        <label style="display: block; color: var(--vitta-pearl); font-size: 14px; margin-bottom: 8px;">
+                            Email * <span style="opacity: 0.7; font-size: 12px;">(para enviar la confirmación de tu pedido)</span>
+                        </label>
+                        <input type="email" name="guest_email" required
+                            style="width: 100%; padding: 12px; background: var(--vitta-black-soft); border: 1px solid var(--vitta-gray); border-radius: 4px; color: var(--vitta-pearl); font-size: 14px;"
+                            value="{{ old('guest_email', session('guest_email')) }}">
+                        @error('guest_email')
+                            <span style="color: #ef4444; font-size: 12px;">{{ $message }}</span>
+                        @enderror
+                    </div>
+                @endguest
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div>
                         <label style="display: block; color: var(--vitta-pearl); font-size: 14px; margin-bottom: 8px;">
@@ -216,13 +230,15 @@
                         placeholder="Referencias del domicilio, puntos de referencia, etc.">{{ old('additional_info') }}</textarea>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <input type="checkbox" name="is_default" id="is_default" value="1" {{ old('is_default') ? 'checked' : '' }}
-                        style="width: 20px; height: 20px;">
-                    <label for="is_default" style="color: var(--vitta-pearl); font-size: 14px;">
-                        Guardar como dirección predeterminada
-                    </label>
-                </div>
+                @auth
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="checkbox" name="is_default" id="is_default" value="1" {{ old('is_default') ? 'checked' : '' }}
+                            style="width: 20px; height: 20px;">
+                        <label for="is_default" style="color: var(--vitta-pearl); font-size: 14px;">
+                            Guardar como dirección predeterminada
+                        </label>
+                    </div>
+                @endauth
 
                 <button type="submit" class="btn-gold" style="margin-top: 16px;">
                     CONTINUAR AL PAGO

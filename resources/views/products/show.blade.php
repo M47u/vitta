@@ -68,14 +68,24 @@
                 <div style="margin-bottom: 24px;">
                     <span id="currentPrice" style="font-size: 36px; font-weight: 700; color: var(--vitta-gold);">
                         @if($defaultVariant)
-                            ${{ number_format($defaultVariant->price, 0, ',', '.') }}
+                            @php
+                                // Aplicar el descuento del producto a la variante si existe
+                                $variantPrice = $product->is_on_sale
+                                    ? $defaultVariant->price * ($product->current_price / $product->base_price)
+                                    : $defaultVariant->price;
+                            @endphp
+                            ${{ number_format($variantPrice, 0, ',', '.') }}
                         @else
                             ${{ number_format($product->current_price, 0, ',', '.') }}
                         @endif
                     </span>
-                    @if($product->is_on_sale && !$defaultVariant)
-                    <span style="font-size: 20px; color: var(--vitta-pearl); opacity: 0.4; text-decoration: line-through; margin-left: 12px;">
-                        ${{ number_format($product->base_price, 0, ',', '.') }}
+                    @if($product->is_on_sale)
+                    <span id="originalPrice" style="font-size: 20px; color: var(--vitta-pearl); opacity: 0.4; text-decoration: line-through; margin-left: 12px;">
+                        @if($defaultVariant)
+                            ${{ number_format($defaultVariant->price, 0, ',', '.') }}
+                        @else
+                            ${{ number_format($product->base_price, 0, ',', '.') }}
+                        @endif
                     </span>
                     <span style="display: inline-block; margin-left: 12px; padding: 4px 12px; background: var(--vitta-gold); color: var(--vitta-black); border-radius: 4px; font-size: 13px; font-weight: 700;">
                         -{{ $product->discount_percentage }}% OFF
@@ -111,7 +121,13 @@
                             onblur="this.style.borderColor='rgba(212, 175, 55, 0.3)'"
                         >
                             @foreach($product->variants as $variant)
-                            <option 
+                            @php
+                                // Aplicar el descuento del producto a cada variante si existe
+                                $variantFinalPrice = $product->is_on_sale
+                                    ? $variant->price * ($product->current_price / $product->base_price)
+                                    : $variant->price;
+                            @endphp
+                            <option
                                 value="{{ $variant->id }}"
                                 data-price="{{ $variant->price }}"
                                 data-stock="{{ $variant->stock }}"
@@ -120,7 +136,10 @@
                                 {{ $loop->first ? 'selected' : '' }}
                                 {{ $variant->stock == 0 ? 'disabled' : '' }}
                             >
-                                {{ $variant->name }} - ${{ number_format($variant->price, 0, ',', '.') }}
+                                {{ $variant->name }} - ${{ number_format($variantFinalPrice, 0, ',', '.') }}
+                                @if($product->is_on_sale)
+                                    <span style="text-decoration: line-through; opacity: 0.6;">${{ number_format($variant->price, 0, ',', '.') }}</span>
+                                @endif
                                 @if($variant->stock > 0)
                                     ({{ $variant->stock }} disponibles)
                                 @else
@@ -317,6 +336,9 @@
 <script>
 // Variants data
 const variants = @json($product->variants);
+const productIsOnSale = {{ $product->is_on_sale ? 'true' : 'false' }};
+const productDiscountRatio = {{ $product->is_on_sale ? ($product->current_price / $product->base_price) : 1 }};
+const productDiscountPercentage = {{ $product->discount_percentage ?? 0 }};
 
 // Change main image
 function changeImage(src) {
@@ -327,16 +349,27 @@ function changeImage(src) {
 function updateVariant() {
     const select = document.getElementById('variantSelector');
     const selectedOption = select.options[select.selectedIndex];
-    
+
     const variantId = select.value;
-    const price = selectedOption.dataset.price;
+    const originalPrice = parseFloat(selectedOption.dataset.price);
     const stock = selectedOption.dataset.stock;
     const sku = selectedOption.dataset.sku;
     const name = selectedOption.dataset.name;
-    
+
+    // Calculate final price with product discount if applicable
+    const finalPrice = productIsOnSale ? originalPrice * productDiscountRatio : originalPrice;
+
     // Update price
     const priceElement = document.getElementById('currentPrice');
-    priceElement.textContent = '$' + new Intl.NumberFormat('es-AR').format(price);
+    priceElement.textContent = '$' + new Intl.NumberFormat('es-AR').format(finalPrice);
+
+    // Update original price if on sale
+    if (productIsOnSale) {
+        const originalPriceElement = document.getElementById('originalPrice');
+        if (originalPriceElement) {
+            originalPriceElement.textContent = '$' + new Intl.NumberFormat('es-AR').format(originalPrice);
+        }
+    }
     
     // Update stock info
     const stockCountElement = document.getElementById('stockCount');

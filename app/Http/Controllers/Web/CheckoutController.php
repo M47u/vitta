@@ -25,16 +25,24 @@ class CheckoutController extends Controller
      */
     public function index()
     {
-        $cart = Cart::with(['items.product', 'items.productVariant'])
-            ->where('user_id', auth()->id())
-            ->first();
+        // Obtener carrito por user_id o session_id
+        if (auth()->check()) {
+            $cart = Cart::with(['items.product', 'items.productVariant'])
+                ->where('user_id', auth()->id())
+                ->first();
+        } else {
+            $cart = Cart::with(['items.product', 'items.productVariant'])
+                ->where('session_id', session()->getId())
+                ->first();
+        }
 
         if (!$cart || $cart->items->isEmpty()) {
             return redirect()->route('cart.index')
                 ->with('error', 'Tu carrito está vacío');
         }
 
-        $addresses = Address::where('user_id', auth()->id())->get();
+        // Solo cargar direcciones si el usuario está autenticado
+        $addresses = auth()->check() ? Address::where('user_id', auth()->id())->get() : collect();
         $defaultAddress = $addresses->where('is_default', true)->first();
 
         return view('checkout.index', compact('cart', 'addresses', 'defaultAddress'));
@@ -46,6 +54,7 @@ class CheckoutController extends Controller
     public function storeAddress(Request $request)
     {
         $validated = $request->validate([
+            'guest_email' => auth()->guest() ? 'required|email|max:255' : 'nullable',
             'recipient_name' => 'required|string|max:255',
             'recipient_phone' => 'required|string|max:20',
             'street_address' => 'required|string|max:255',
@@ -60,17 +69,27 @@ class CheckoutController extends Controller
             'is_default' => 'boolean',
         ]);
 
-        $validated['user_id'] = auth()->id();
-        $validated['label'] = $validated['label'] ?? 'Principal';
+        if (auth()->check()) {
+            // Usuario autenticado - guardar dirección en BD
+            $validated['user_id'] = auth()->id();
+            $validated['label'] = $validated['label'] ?? 'Principal';
 
-        $address = Address::create($validated);
+            $address = Address::create($validated);
 
-        if ($request->is_default) {
-            $address->setAsDefault();
+            if ($request->is_default) {
+                $address->setAsDefault();
+            }
+
+            return redirect()->route('checkout.payment', ['address' => $address->id])
+                ->with('success', 'Dirección guardada correctamente');
+        } else {
+            // Usuario invitado - guardar en sesión
+            session()->put('guest_address', $validated);
+            session()->put('guest_email', $validated['guest_email']);
+
+            return redirect()->route('checkout.payment', ['address' => 'guest'])
+                ->with('success', 'Dirección guardada correctamente');
         }
-
-        return redirect()->route('checkout.payment', ['address' => $address->id])
-            ->with('success', 'Dirección guardada correctamente');
     }
 
     /**
@@ -133,47 +152,77 @@ class CheckoutController extends Controller
      */
     public function payment($addressId)
     {
-        $cart = Cart::with(['items.product', 'items.productVariant'])
-            ->where('user_id', auth()->id())
-            ->first();
+        // Obtener carrito por user_id o session_id
+        if (auth()->check()) {
+            $cart = Cart::with(['items.product', 'items.productVariant'])
+                ->where('user_id', auth()->id())
+                ->first();
+        } else {
+            $cart = Cart::with(['items.product', 'items.productVariant'])
+                ->where('session_id', session()->getId())
+                ->first();
+        }
 
         if (!$cart || $cart->items->isEmpty()) {
             return redirect()->route('cart.index')
                 ->with('error', 'Tu carrito está vacío');
         }
 
-        $address = Address::where('user_id', auth()->id())
-            ->findOrFail($addressId);
+        // Obtener dirección (de BD o de sesión)
+        if ($addressId === 'guest') {
+            // Dirección de invitado desde sesión
+            $addressData = session('guest_address');
+            if (!$addressData) {
+                return redirect()->route('checkout.index')
+                    ->with('error', 'Por favor completa la información de envío');
+            }
+
+            // Crear objeto stdClass para compatibilidad
+            $address = (object) [
+                'recipient_name' => $addressData['recipient_name'],
+                'recipient_phone' => $addressData['recipient_phone'],
+                'postal_code' => $addressData['postal_code'],
+                'full_address' => trim(
+                    $addressData['street_address'] . ' ' . $addressData['street_number'] .
+                    ($addressData['apartment'] ? ', ' . $addressData['apartment'] : '') . ', ' .
+                    $addressData['city'] . ', ' . $addressData['state'] . ', ' . $addressData['country']
+                ),
+            ];
+        } else {
+            $address = Address::where('user_id', auth()->id())
+                ->findOrFail($addressId);
+        }
 
         // Use cart's calculated totals (includes IVA)
         $cart->calculateTotals();
         $subtotal = $cart->subtotal;
         $tax = $cart->tax;
-        
+
         // Calcular envío usando el método configurado
         $mercadoEnvios = new MercadoEnviosService();
         $dimensions = $mercadoEnvios->calculatePackageDimensions($cart->items);
         $dimensions['item_price'] = (int)$cart->total;
-        
+
         $zipCodeFrom = config('services.mercadoenvios.zip_code_from');
         $shippingResult = $mercadoEnvios->calculateShippingCost(
             $zipCodeFrom,
             $address->postal_code,
             $dimensions
         );
-        
+
         $shipping = $shippingResult['cost'];
         $shippingMethod = $shippingResult['method'];
         $shippingOptions = $shippingResult['details']['options'] ?? [];
-        
+
         $total = $cart->total + $shipping;
 
         return view('checkout.payment', compact(
-            'cart', 
-            'address', 
-            'subtotal', 
-            'tax', 
-            'shipping', 
+            'cart',
+            'address',
+            'addressId',
+            'subtotal',
+            'tax',
+            'shipping',
             'total',
             'shippingOptions'
         ));
@@ -187,38 +236,86 @@ class CheckoutController extends Controller
         try {
             DB::beginTransaction();
 
-            $cart = Cart::with(['items.product', 'items.productVariant'])
-                ->where('user_id', auth()->id())
-                ->firstOrFail();
+            // Obtener carrito por user_id o session_id
+            if (auth()->check()) {
+                $cart = Cart::with(['items.product', 'items.productVariant'])
+                    ->where('user_id', auth()->id())
+                    ->firstOrFail();
+            } else {
+                $cart = Cart::with(['items.product', 'items.productVariant'])
+                    ->where('session_id', session()->getId())
+                    ->firstOrFail();
+            }
 
-            $address = Address::where('user_id', auth()->id())
-                ->findOrFail($addressId);
+            // Obtener dirección (de BD o de sesión)
+            if ($addressId === 'guest') {
+                $addressData = session('guest_address');
+                if (!$addressData) {
+                    throw new \Exception('No se encontró información de envío');
+                }
+
+                $address = (object) [
+                    'recipient_name' => $addressData['recipient_name'],
+                    'recipient_phone' => $addressData['recipient_phone'],
+                    'postal_code' => $addressData['postal_code'],
+                    'full_address' => trim(
+                        $addressData['street_address'] . ' ' . $addressData['street_number'] .
+                        ($addressData['apartment'] ? ', ' . $addressData['apartment'] : '') . ', ' .
+                        $addressData['city'] . ', ' . $addressData['state'] . ', ' . $addressData['country']
+                    ),
+                ];
+            } else {
+                $address = Address::where('user_id', auth()->id())
+                    ->findOrFail($addressId);
+            }
 
             // Use cart's calculated totals (includes IVA)
             $cart->calculateTotals();
             $subtotal = $cart->subtotal;
             $tax = $cart->tax;
-            
+
+            // Debug logging
+            Log::info('Cart totals before order creation', [
+                'cart_id' => $cart->id,
+                'cart_subtotal' => $cart->subtotal,
+                'cart_tax' => $cart->tax,
+                'cart_total' => $cart->total,
+                'cart_items_count' => $cart->items->count(),
+                'cart_items' => $cart->items->map(fn($item) => [
+                    'product' => $item->product->name,
+                    'price' => $item->price,
+                    'quantity' => $item->quantity,
+                    'subtotal' => $item->subtotal
+                ])
+            ]);
+
             // Calcular envío usando el método configurado
             $mercadoEnvios = new MercadoEnviosService();
             $dimensions = $mercadoEnvios->calculatePackageDimensions($cart->items);
             $dimensions['item_price'] = (int)$cart->total;
-            
+
             $zipCodeFrom = config('services.mercadoenvios.zip_code_from');
             $shippingResult = $mercadoEnvios->calculateShippingCost(
                 $zipCodeFrom,
                 $address->postal_code,
                 $dimensions
             );
-            
+
             $shipping = $shippingResult['cost'];
             $total = $cart->total + $shipping;
 
+            // Debug logging for total calculation
+            Log::info('Order total calculation', [
+                'cart_total' => $cart->total,
+                'shipping_cost' => $shipping,
+                'final_total' => $total
+            ]);
+
             // Create order
-            $order = Order::create([
+            $orderData = [
                 'order_number' => Order::generateOrderNumber(),
-                'user_id' => auth()->id(),
-                'address_id' => $address->id,
+                'user_id' => auth()->check() ? auth()->id() : null,
+                'address_id' => ($addressId !== 'guest' && isset($address->id)) ? $address->id : null,
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'payment_method' => 'mercadopago',
@@ -232,11 +329,22 @@ class CheckoutController extends Controller
                     'full_address' => $address->full_address,
                 ],
                 'notes' => $request->notes,
-            ]);
+            ];
+
+            // Agregar datos de invitado si no está autenticado
+            if (!auth()->check()) {
+                $orderData['guest_email'] = session('guest_email');
+                $orderData['guest_name'] = $address->recipient_name;
+            }
+
+            $order = Order::create($orderData);
 
             // Create order items
             foreach ($cart->items as $cartItem) {
-                $price = $cartItem->product->discount_price ?? $cartItem->product->base_price;
+                // Usar el precio del CartItem que ya tiene el precio correcto
+                // (incluye precio de variante y descuentos aplicados)
+                $price = $cartItem->price;
+                $subtotal = $cartItem->subtotal;
 
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -247,7 +355,7 @@ class CheckoutController extends Controller
                     'variant_name' => $cartItem->productVariant ? $cartItem->productVariant->name : null,
                     'quantity' => $cartItem->quantity,
                     'price' => $price,
-                    'subtotal' => $price * $cartItem->quantity,
+                    'subtotal' => $subtotal,
                 ]);
             }
 
@@ -315,6 +423,23 @@ class CheckoutController extends Controller
             // Calcular el total a cobrar (subtotal + IVA + envío)
             $totalAmount = $order->total;
 
+            // Debug: Log del monto total
+            Log::info('Creating MercadoPago preference - Total Amount', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'order_total' => $order->total,
+                'total_amount' => $totalAmount,
+                'order_subtotal' => $order->subtotal,
+                'order_tax' => $order->tax,
+                'order_shipping' => $order->shipping
+            ]);
+
+            // Validar que el monto sea válido
+            if ($totalAmount < 1) {
+                Log::error('Invalid total amount for MercadoPago', ['total' => $totalAmount]);
+                throw new \Exception('El monto total debe ser mayor a $1 ARS');
+            }
+
             // Crear un solo item con el total de la orden
             $items = [
                 [
@@ -326,11 +451,15 @@ class CheckoutController extends Controller
                 ]
             ];
 
+            // Determinar nombre y email del pagador
+            $payerName = $order->user ? $order->user->name : ($order->guest_name ?? 'Cliente');
+            $payerEmail = $order->user ? $order->user->email : ($order->guest_email ?? 'guest@vittaperfumes.com');
+
             $preferenceData = [
                 'items' => $items,
                 'payer' => [
-                    'name' => $order->user->name,
-                    'email' => $order->user->email,
+                    'name' => $payerName,
+                    'email' => $payerEmail,
                 ],
                 'back_urls' => [
                     'success' => route('checkout.success', ['order' => $order->id]),

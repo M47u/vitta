@@ -181,19 +181,11 @@
                                 </span>
                             </div>
 
-                            @auth
-                                <a href="{{ route("checkout.index") }}" class="btn-gold"
-                                    style="width: 100%; text-align: center; padding: 18px; text-decoration: none; display: block; margin-bottom: 12px;">
-                                    <i class="bi bi-lock" style="margin-right: 8px;"></i>
-                                    FINALIZAR COMPRA
-                                </a>
-                            @else
-                                <a href="{{ route("login") }}" class="btn-gold"
-                                    style="width: 100%; text-align: center; padding: 18px; text-decoration: none; display: block; margin-bottom: 12px;">
-                                    <i class="bi bi-box-arrow-in-right" style="margin-right: 8px;"></i>
-                                    INICIAR SESIÓN PARA COMPRAR
-                                </a>
-                            @endauth
+                            <a href="{{ route("checkout.index") }}" class="btn-gold"
+                                style="width: 100%; text-align: center; padding: 18px; text-decoration: none; display: block; margin-bottom: 12px;">
+                                <i class="bi bi-lock" style="margin-right: 8px;"></i>
+                                FINALIZAR COMPRA
+                            </a>
 
                             <a href="{{ route('products.index') }}"
                                 style="display: block; text-align: center; padding: 14px; border: 2px solid rgba(212, 175, 55, 0.3); color: var(--vitta-pearl); text-decoration: none; border-radius: 4px; font-weight: 600;">

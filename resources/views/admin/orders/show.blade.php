@@ -178,9 +178,13 @@
                         style="width: 60px; height: 60px; background: rgba(212, 175, 55, 0.1); border: 2px solid #D4AF37; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
                         <i class="bi bi-person" style="font-size: 28px; color: #D4AF37;"></i>
                     </div>
-                    <p style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">{{ $order->user->name }}</p>
-                    <p style="font-size: 13px; color: rgba(248, 245, 240, 0.6);">{{ $order->user->email }}</p>
-                    @if($order->user->phone)
+                    <p style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">
+                        {{ $order->user ? $order->user->name : ($order->guest_name ?? 'Cliente Invitado') }}
+                    </p>
+                    <p style="font-size: 13px; color: rgba(248, 245, 240, 0.6);">
+                        {{ $order->user ? $order->user->email : ($order->guest_email ?? 'N/A') }}
+                    </p>
+                    @if($order->user && $order->user->phone)
                         <p style="font-size: 13px; color: #D4AF37; margin-top: 8px;">
                             <i class="bi bi-whatsapp"></i> {{ $order->user->phone }}
                         </p>

@@ -27,9 +27,9 @@ Route::prefix('carrito')->name('cart.')->group(function () {
     Route::delete('/{item}', [CartController::class, 'destroy'])->name('destroy');
 });
 
-// ===== RUTAS DE CHECKOUT (AUTENTICADAS) =====
+// ===== RUTAS DE CHECKOUT (PÚBLICAS - GUEST CHECKOUT HABILITADO) =====
 
-Route::prefix('checkout')->name('checkout.')->middleware('auth')->group(function () {
+Route::prefix('checkout')->name('checkout.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Web\CheckoutController::class, 'index'])->name('index');
     Route::post('/address', [\App\Http\Controllers\Web\CheckoutController::class, 'storeAddress'])->name('address.store');
     Route::get('/payment/{address}', [\App\Http\Controllers\Web\CheckoutController::class, 'payment'])->name('payment');
