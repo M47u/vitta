@@ -63,14 +63,22 @@
                 <!-- Precios -->
                 <div class="card-admin">
                     <div class="card-header">
-                        <h3 class="card-title">Precios</h3>
+                        <h3 class="card-title">Precios (Solo si NO usas presentaciones)</h3>
+                    </div>
+
+                    <div style="background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 6px; padding: 12px; margin-bottom: 16px;">
+                        <p style="color: var(--vitta-gold); font-size: 13px; margin: 0;">
+                            <i class="bi bi-info-circle" style="margin-right: 6px;"></i>
+                            <strong>Importante:</strong> Estos precios solo se usan si el producto NO tiene presentaciones. Si agregas presentaciones más abajo, cada una tendrá su propio precio.
+                        </p>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                         <div class="form-group">
-                            <label class="form-label">Precio Base *</label>
+                            <label class="form-label">Precio Base</label>
                             <input type="number" name="base_price" class="form-control" step="0.01"
-                                value="{{ old('base_price', $product->base_price) }}" required>
+                                value="{{ old('base_price', $product->base_price) }}" min="0">
+                            <small style="color: rgba(248, 245, 240, 0.6); font-size: 12px;">Dejar en 0 si usarás presentaciones</small>
                             @error('base_price')
                                 <span style="color: #ef4444; font-size: 12px; margin-top: 4px;">{{ $message }}</span>
                             @enderror
@@ -79,9 +87,8 @@
                         <div class="form-group">
                             <label class="form-label">Precio con Descuento</label>
                             <input type="number" name="discount_price" class="form-control" step="0.01"
-                                value="{{ old('discount_price', $product->discount_price) }}">
-                            <small style="color: rgba(248, 245, 240, 0.6); font-size: 12px;">Dejar vacío si no hay
-                                descuento</small>
+                                value="{{ old('discount_price', $product->discount_price) }}" min="0">
+                            <small style="color: rgba(248, 245, 240, 0.6); font-size: 12px;">Opcional - solo si el producto tiene descuento</small>
                             @error('discount_price')
                                 <span style="color: #ef4444; font-size: 12px; margin-top: 4px;">{{ $message }}</span>
                             @enderror
@@ -168,29 +175,38 @@
                 <!-- Variantes / Presentaciones -->
                 <div class="card-admin">
                     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 class="card-title">Presentaciones / Tamaños</h3>
+                        <h3 class="card-title">Presentaciones / Tamaños (Recomendado)</h3>
                         <button type="button" onclick="addVariant()" class="btn-primary"
                             style="padding: 8px 16px; font-size: 12px;">
                             <i class="bi bi-plus-circle"></i> Agregar Presentación
                         </button>
                     </div>
 
+                    <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; padding: 12px; margin-bottom: 16px;">
+                        <p style="color: #22c55e; font-size: 13px; margin: 0;">
+                            <i class="bi bi-lightbulb" style="margin-right: 6px;"></i>
+                            <strong>Recomendación:</strong> Las presentaciones del producto (Ej: 50ml, 100ml, 200ml) se gestionan aquí. Cada presentación tiene su propio precio y stock.
+                        </p>
+                    </div>
+
                     <div id="variantsContainer">
                         @if($product->variants && $product->variants->count() > 0)
                             @foreach($product->variants as $variant)
                                 <div class="variant-item" data-id="{{ $variant->id }}"
-                                    style="border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 16px; position: relative;">
+                                    style="border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 16px; position: relative; background: rgba(0, 0, 0, 0.3);">
                                     <input type="hidden" name="existing_variants[{{ $variant->id }}][id]"
                                         value="{{ $variant->id }}">
 
                                     <button type="button" onclick="removeExistingVariant(this, {{ $variant->id }})"
-                                        style="position: absolute; top: 12px; right: 12px; background: #ef4444; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px;">
+                                        style="position: absolute; top: 12px; right: 12px; background: #ef4444; color: white; border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 12px;">
                                         <i class="bi bi-trash"></i> Eliminar
                                     </button>
 
-                                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                    <h4 style="color: var(--vitta-gold); font-size: 14px; margin-bottom: 16px;">{{ $variant->name }}</h4>
+
+                                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
                                         <div class="form-group" style="margin-bottom: 0;">
-                                            <label class="form-label" style="font-size: 13px;">Nombre *</label>
+                                            <label class="form-label" style="font-size: 13px;">Nombre de la Presentación *</label>
                                             <input type="text" name="existing_variants[{{ $variant->id }}][name]"
                                                 class="form-control" value="{{ $variant->name }}" required
                                                 style="font-size: 13px; padding: 8px 12px;">
@@ -202,25 +218,19 @@
                                                 class="form-control" value="{{ $variant->ml_size }}" required
                                                 style="font-size: 13px; padding: 8px 12px;">
                                         </div>
+                                    </div>
 
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                                         <div class="form-group" style="margin-bottom: 0;">
-                                            <label class="form-label" style="font-size: 13px;">Precio *</label>
+                                            <label class="form-label" style="font-size: 13px;">Precio Regular *</label>
                                             <input type="number" name="existing_variants[{{ $variant->id }}][price]"
                                                 class="form-control" step="0.01" value="{{ $variant->price }}"
                                                 required style="font-size: 13px; padding: 8px 12px;">
-                                        </div>
-                                    </div>
-
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                                        <div class="form-group" style="margin-bottom: 0;">
-                                            <label class="form-label" style="font-size: 13px;">SKU *</label>
-                                            <input type="text" name="existing_variants[{{ $variant->id }}][sku]"
-                                                class="form-control" value="{{ $variant->sku }}" required
-                                                style="font-size: 13px; padding: 8px 12px;">
+                                            <small style="color: rgba(248, 245, 240, 0.5); font-size: 11px;">Precio sin descuento</small>
                                         </div>
 
                                         <div class="form-group" style="margin-bottom: 0;">
-                                            <label class="form-label" style="font-size: 13px;">Stock
+                                            <label class="form-label" style="font-size: 13px;">Stock Actual
                                                 @if($variant->isLowStock())
                                                     <span style="color: #ef4444; font-size: 11px;">⚠️ BAJO</span>
                                                 @endif
@@ -228,6 +238,7 @@
                                             <input type="number" name="existing_variants[{{ $variant->id }}][stock]"
                                                 class="form-control" value="{{ $variant->stock }}"
                                                 style="font-size: 13px; padding: 8px 12px;">
+                                            <small style="color: rgba(248, 245, 240, 0.5); font-size: 11px;">Unidades disponibles</small>
                                         </div>
 
                                         <div class="form-group" style="margin-bottom: 0;">
@@ -236,6 +247,37 @@
                                                 name="existing_variants[{{ $variant->id }}][min_stock]"
                                                 class="form-control" value="{{ $variant->min_stock }}"
                                                 style="font-size: 13px; padding: 8px 12px;">
+                                            <small style="color: rgba(248, 245, 240, 0.5); font-size: 11px;">Alerta de stock bajo</small>
+                                        </div>
+                                    </div>
+
+                                    <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px;">
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label class="form-label" style="font-size: 13px;">SKU (Código único) *</label>
+                                            <input type="text" name="existing_variants[{{ $variant->id }}][sku]"
+                                                class="form-control" value="{{ $variant->sku }}" required
+                                                style="font-size: 13px; padding: 8px 12px;">
+                                            <small style="color: rgba(248, 245, 240, 0.5); font-size: 11px;">Ejemplo: VT-PRODUCTO-100</small>
+                                        </div>
+                                    </div>
+
+                                    <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px;">
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label class="form-label" style="font-size: 13px;">Imagen de la Presentación</label>
+                                            @if($variant->image)
+                                                <div style="margin-bottom: 12px;">
+                                                    <img src="{{ asset('storage/' . $variant->image) }}" alt="{{ $variant->name }}" 
+                                                         style="max-width: 150px; max-height: 150px; border-radius: 8px; border: 1px solid rgba(212, 175, 55, 0.3);">
+                                                    <label style="display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer;">
+                                                        <input type="checkbox" name="existing_variants[{{ $variant->id }}][remove_image]" value="1" style="width: 16px; height: 16px;">
+                                                        <span style="color: #ef4444; font-size: 12px;">Eliminar imagen actual</span>
+                                                    </label>
+                                                </div>
+                                            @endif
+                                            <input type="file" name="existing_variant_images[{{ $variant->id }}]" class="form-control" accept="image/jpeg,image/jpg,image/png,image/webp" style="font-size: 13px; padding: 8px 12px;">
+                                            <small style="color: rgba(248, 245, 240, 0.5); font-size: 11px;">
+                                                {{ $variant->image ? 'Subir nueva imagen reemplazará la actual' : 'Si no subes imagen, se usará la del producto' }}
+                                            </small>
                                         </div>
                                     </div>
 
@@ -467,42 +509,58 @@
             }
 
             const variantHtml = `
-                <div class="variant-item" data-index="${variantIndex}" style="border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 16px; position: relative;">
-                    <button type="button" onclick="removeVariant(this)" style="position: absolute; top: 12px; right: 12px; background: #ef4444; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px;">
+                <div class="variant-item" data-index="${variantIndex}" style="border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 16px; position: relative; background: rgba(0, 0, 0, 0.3);">
+                    <button type="button" onclick="removeVariant(this)" style="position: absolute; top: 12px; right: 12px; background: #ef4444; color: white; border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 12px;">
                         <i class="bi bi-trash"></i> Eliminar
                     </button>
 
-                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                    <h4 style="color: var(--vitta-gold); font-size: 14px; margin-bottom: 16px;">Nueva Presentación #${variantIndex + 1}</h4>
+
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" style="font-size: 13px;">Nombre *</label>
-                            <input type="text" name="variants[${variantIndex}][name]" class="form-control" placeholder="Ej: Oud Noir 100ml" required style="font-size: 13px; padding: 8px 12px;">
+                            <label class="form-label" style="font-size: 13px;">Nombre de la Presentación *</label>
+                            <input type="text" name="variants[${variantIndex}][name]" class="form-control" placeholder="Ej: 100ml - Eau de Parfum" required style="font-size: 13px; padding: 8px 12px;">
                         </div>
                         
                         <div class="form-group" style="margin-bottom: 0;">
                             <label class="form-label" style="font-size: 13px;">Tamaño (ml) *</label>
                             <input type="number" name="variants[${variantIndex}][ml_size]" class="form-control" placeholder="100" required style="font-size: 13px; padding: 8px 12px;">
                         </div>
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" style="font-size: 13px;">Precio *</label>
-                            <input type="number" name="variants[${variantIndex}][price]" class="form-control" step="0.01" placeholder="0.00" required style="font-size: 13px; padding: 8px 12px;">
-                        </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" style="font-size: 13px;">SKU *</label>
-                            <input type="text" name="variants[${variantIndex}][sku]" class="form-control" placeholder="VT-OUD-100" required style="font-size: 13px; padding: 8px 12px;">
+                            <label class="form-label" style="font-size: 13px;">Precio Regular *</label>
+                            <input type="number" name="variants[${variantIndex}][price]" class="form-control" step="0.01" placeholder="89999.00" required style="font-size: 13px; padding: 8px 12px;">
+                            <small style="color: rgba(248, 245, 240, 0.5); font-size: 11px;">Precio sin descuento</small>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" style="font-size: 13px;">Stock Inicial</label>
+                            <label class="form-label" style="font-size: 13px;">Stock Inicial *</label>
                             <input type="number" name="variants[${variantIndex}][stock]" class="form-control" value="0" style="font-size: 13px; padding: 8px 12px;">
+                            <small style="color: rgba(248, 245, 240, 0.5); font-size: 11px;">Unidades disponibles</small>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 0;">
                             <label class="form-label" style="font-size: 13px;">Stock Mínimo</label>
                             <input type="number" name="variants[${variantIndex}][min_stock]" class="form-control" value="5" style="font-size: 13px; padding: 8px 12px;">
+                            <small style="color: rgba(248, 245, 240, 0.5); font-size: 11px;">Alerta de stock bajo</small>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="font-size: 13px;">SKU (Código único) *</label>
+                            <input type="text" name="variants[${variantIndex}][sku]" class="form-control" placeholder="VT-OUD-100" required style="font-size: 13px; padding: 8px 12px;">
+                            <small style="color: rgba(248, 245, 240, 0.5); font-size: 11px;">Ejemplo: VT-PRODUCTO-100</small>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="font-size: 13px;">Imagen de la Presentación (Opcional)</label>
+                            <input type="file" name="variant_images[${variantIndex}]" class="form-control" accept="image/jpeg,image/jpg,image/png,image/webp" style="font-size: 13px; padding: 8px 12px;">
+                            <small style="color: rgba(248, 245, 240, 0.5); font-size: 11px;">Si no subes una imagen, se usará la imagen del producto</small>
                         </div>
                     </div>
 

@@ -273,7 +273,7 @@
                                 </p>
                             </div>
                             <p style="color: var(--vitta-gold); font-weight: 600;">
-                                ${{ number_format(($item->product->discount_price ?? $item->product->base_price) * $item->quantity, 2) }}
+                                ${{ number_format($item->subtotal, 0, ',', '.') }}
                             </p>
                         </div>
                     @endforeach

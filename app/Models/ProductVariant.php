@@ -19,6 +19,7 @@ class ProductVariant extends Model
         'stock',
         'min_stock',
         'is_active',
+        'image',
     ];
 
     protected $casts = [

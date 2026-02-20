@@ -68,26 +68,16 @@
                 <div style="margin-bottom: 24px;">
                     <span id="currentPrice" style="font-size: 36px; font-weight: 700; color: var(--vitta-gold);">
                         @if($defaultVariant)
-                            @php
-                                // Aplicar el descuento del producto a la variante si existe
-                                $variantPrice = $product->is_on_sale
-                                    ? $defaultVariant->price * ($product->current_price / $product->base_price)
-                                    : $defaultVariant->price;
-                            @endphp
-                            ${{ number_format($variantPrice, 0, ',', '.') }}
+                            ${{ number_format($defaultVariant->price, 0, ',', '.') }}
                         @else
                             ${{ number_format($product->current_price, 0, ',', '.') }}
                         @endif
                     </span>
-                    @if($product->is_on_sale)
+                    @if($product->is_on_sale && !$defaultVariant)
                     <span id="originalPrice" style="font-size: 20px; color: var(--vitta-pearl); opacity: 0.4; text-decoration: line-through; margin-left: 12px;">
-                        @if($defaultVariant)
-                            ${{ number_format($defaultVariant->price, 0, ',', '.') }}
-                        @else
-                            ${{ number_format($product->base_price, 0, ',', '.') }}
-                        @endif
+                        ${{ number_format($product->base_price, 0, ',', '.') }}
                     </span>
-                    <span style="display: inline-block; margin-left: 12px; padding: 4px 12px; background: var(--vitta-gold); color: var(--vitta-black); border-radius: 4px; font-size: 13px; font-weight: 700;">
+                    <span class="discount-badge" style="display: inline-block; margin-left: 12px; padding: 4px 12px; background: var(--vitta-gold); color: var(--vitta-black); border-radius: 4px; font-size: 13px; font-weight: 700;">
                         -{{ $product->discount_percentage }}% OFF
                     </span>
                     @endif
@@ -121,25 +111,17 @@
                             onblur="this.style.borderColor='rgba(212, 175, 55, 0.3)'"
                         >
                             @foreach($product->variants as $variant)
-                            @php
-                                // Aplicar el descuento del producto a cada variante si existe
-                                $variantFinalPrice = $product->is_on_sale
-                                    ? $variant->price * ($product->current_price / $product->base_price)
-                                    : $variant->price;
-                            @endphp
                             <option
                                 value="{{ $variant->id }}"
                                 data-price="{{ $variant->price }}"
                                 data-stock="{{ $variant->stock }}"
                                 data-sku="{{ $variant->sku }}"
                                 data-name="{{ $variant->name }}"
+                                data-image="{{ $variant->image ? asset('storage/' . $variant->image) : '' }}"
                                 {{ $loop->first ? 'selected' : '' }}
                                 {{ $variant->stock == 0 ? 'disabled' : '' }}
                             >
-                                {{ $variant->name }} - ${{ number_format($variantFinalPrice, 0, ',', '.') }}
-                                @if($product->is_on_sale)
-                                    <span style="text-decoration: line-through; opacity: 0.6;">${{ number_format($variant->price, 0, ',', '.') }}</span>
-                                @endif
+                                {{ $variant->name }} - ${{ number_format($variant->price, 0, ',', '.') }}
                                 @if($variant->stock > 0)
                                     ({{ $variant->stock }} disponibles)
                                 @else
@@ -317,8 +299,16 @@
                                 {{ $related->name }}
                             </a>
                         </h3>
+                        @php
+                            // Mostrar el precio de la variante más pequeña si existe
+                            $relatedVariant = $related->variants()
+                                ->where('is_active', true)
+                                ->orderBy('ml_size')
+                                ->first();
+                            $relatedPrice = $relatedVariant ? $relatedVariant->price : $related->current_price;
+                        @endphp
                         <span style="font-size: 18px; font-weight: 700; color: var(--vitta-gold);">
-                            ${{ number_format($related->current_price, 0, ',', '.') }}
+                            ${{ number_format($relatedPrice, 0, ',', '.') }}
                         </span>
                     </div>
                 </div>
@@ -337,8 +327,6 @@
 // Variants data
 const variants = @json($product->variants);
 const productIsOnSale = {{ $product->is_on_sale ? 'true' : 'false' }};
-const productDiscountRatio = {{ $product->is_on_sale ? ($product->current_price / $product->base_price) : 1 }};
-const productDiscountPercentage = {{ $product->discount_percentage ?? 0 }};
 
 // Change main image
 function changeImage(src) {
@@ -351,24 +339,32 @@ function updateVariant() {
     const selectedOption = select.options[select.selectedIndex];
 
     const variantId = select.value;
-    const originalPrice = parseFloat(selectedOption.dataset.price);
+    const variantPrice = parseFloat(selectedOption.dataset.price);
     const stock = selectedOption.dataset.stock;
     const sku = selectedOption.dataset.sku;
     const name = selectedOption.dataset.name;
+    const variantImage = selectedOption.dataset.image;
 
-    // Calculate final price with product discount if applicable
-    const finalPrice = productIsOnSale ? originalPrice * productDiscountRatio : originalPrice;
+    // Update image if variant has its own image
+    if (variantImage && variantImage.trim() !== '') {
+        document.getElementById('mainImage').src = variantImage;
+    } else if ({{ $product->main_image ? 'true' : 'false' }}) {
+        // Fallback to product main image
+        document.getElementById('mainImage').src = '{{ $product->main_image ? asset('storage/' . $product->main_image) : '' }}';
+    }
 
-    // Update price
+    // Update price (variants have their own fixed prices)
     const priceElement = document.getElementById('currentPrice');
-    priceElement.textContent = '$' + new Intl.NumberFormat('es-AR').format(finalPrice);
+    priceElement.textContent = '$' + new Intl.NumberFormat('es-AR').format(variantPrice);
 
-    // Update original price if on sale
-    if (productIsOnSale) {
-        const originalPriceElement = document.getElementById('originalPrice');
-        if (originalPriceElement) {
-            originalPriceElement.textContent = '$' + new Intl.NumberFormat('es-AR').format(originalPrice);
-        }
+    // Remove original price display for variants (they don't inherit product discounts)
+    const originalPriceElement = document.getElementById('originalPrice');
+    if (originalPriceElement) {
+        originalPriceElement.style.display = 'none';
+    }
+    const discountBadge = document.querySelector('.discount-badge');
+    if (discountBadge) {
+        discountBadge.style.display = 'none';
     }
     
     // Update stock info

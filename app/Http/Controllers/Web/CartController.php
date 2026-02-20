@@ -62,12 +62,10 @@ class CartController extends Controller
 
         $cart = $this->getOrCreateCart();
 
-        // Calcular precio aplicando descuento del producto a la variante si existe
+        // Calcular precio: las variantes tienen su propio precio fijo
+        // Solo se usa el precio con descuento del producto si NO hay variante
         if ($variant) {
-            // Si el producto tiene descuento, aplicarlo a la variante
-            $price = $product->is_on_sale
-                ? $variant->price * ($product->current_price / $product->base_price)
-                : $variant->price;
+            $price = $variant->price;
         } else {
             $price = $product->current_price;
         }

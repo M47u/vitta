@@ -108,13 +108,21 @@
 
                             <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto;">
                                 <div>
-                                    @if($product->is_on_sale)
+                                    @php
+                                        // Si el producto tiene variantes, mostrar el precio de la variante más pequeña
+                                        $defaultVariant = $product->variants()
+                                            ->where('is_active', true)
+                                            ->orderBy('ml_size')
+                                            ->first();
+                                        $displayPrice = $defaultVariant ? $defaultVariant->price : $product->current_price;
+                                    @endphp
+                                    @if($product->is_on_sale && !$defaultVariant)
                                         <span style="font-size: 14px; color: var(--vitta-pearl); opacity: 0.5; text-decoration: line-through; margin-right: 8px;">
                                             ${{ number_format($product->base_price, 0, ',', '.') }}
                                         </span>
                                     @endif
                                     <span style="font-size: 24px; color: var(--vitta-gold); font-weight: 700;">
-                                        ${{ number_format($product->current_price, 0, ',', '.') }}
+                                        ${{ number_format($displayPrice, 0, ',', '.') }}
                                     </span>
                                 </div>
 

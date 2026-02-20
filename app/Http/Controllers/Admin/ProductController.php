@@ -43,11 +43,13 @@ class ProductController extends Controller
             $validated['slug'] = Str::slug($validated['name']);
         }
 
-        // Calcular porcentaje de descuento
-        if (!empty($validated['discount_price']) && $validated['base_price'] > 0) {
+        // Calcular porcentaje de descuento solo si hay precio base
+        if (!empty($validated['discount_price']) && !empty($validated['base_price']) && $validated['base_price'] > 0) {
             $validated['discount_percentage'] = round(
                 (($validated['base_price'] - $validated['discount_price']) / $validated['base_price']) * 100
             );
+        } else {
+            $validated['discount_percentage'] = null;
         }
 
         // Manejar imágenes
@@ -64,7 +66,13 @@ class ProductController extends Controller
 
         // Crear variantes si existen
         if ($request->has('variants')) {
-            foreach ($request->variants as $variantData) {
+            foreach ($request->variants as $index => $variantData) {
+                // Manejar imagen de la variante
+                $variantImage = null;
+                if ($request->hasFile("variant_images.{$index}")) {
+                    $variantImage = $request->file("variant_images.{$index}")->store('variants', 'public');
+                }
+
                 $product->variants()->create([
                     'name' => $variantData['name'],
                     'sku' => $variantData['sku'],
@@ -73,6 +81,7 @@ class ProductController extends Controller
                     'stock' => $variantData['stock'] ?? 0,
                     'min_stock' => $variantData['min_stock'] ?? 5,
                     'is_active' => isset($variantData['is_active']) ? true : false,
+                    'image' => $variantImage,
                 ]);
             }
         }
@@ -96,8 +105,8 @@ class ProductController extends Controller
             $validated['slug'] = Str::slug($validated['name']);
         }
 
-        // Calcular porcentaje de descuento
-        if (!empty($validated['discount_price']) && $validated['base_price'] > 0) {
+        // Calcular porcentaje de descuento solo si hay precio base
+        if (!empty($validated['discount_price']) && !empty($validated['base_price']) && $validated['base_price'] > 0) {
             $validated['discount_percentage'] = round(
                 (($validated['base_price'] - $validated['discount_price']) / $validated['base_price']) * 100
             );
@@ -134,6 +143,21 @@ class ProductController extends Controller
             foreach ($request->existing_variants as $variantId => $variantData) {
                 $variant = $product->variants()->find($variantId);
                 if ($variant) {
+                    // Manejar eliminación de imagen
+                    if (isset($variantData['remove_image']) && $variant->image) {
+                        Storage::disk('public')->delete($variant->image);
+                        $variant->image = null;
+                    }
+
+                    // Manejar nueva imagen
+                    if ($request->hasFile("existing_variant_images.{$variantId}")) {
+                        // Eliminar imagen anterior si existe
+                        if ($variant->image) {
+                            Storage::disk('public')->delete($variant->image);
+                        }
+                        $variant->image = $request->file("existing_variant_images.{$variantId}")->store('variants', 'public');
+                    }
+
                     $variant->update([
                         'name' => $variantData['name'],
                         'sku' => $variantData['sku'],
@@ -142,6 +166,7 @@ class ProductController extends Controller
                         'stock' => $variantData['stock'] ?? 0,
                         'min_stock' => $variantData['min_stock'] ?? 5,
                         'is_active' => isset($variantData['is_active']) ? true : false,
+                        'image' => $variant->image,
                     ]);
                 }
             }
@@ -149,7 +174,13 @@ class ProductController extends Controller
 
         // Crear nuevas variantes
         if ($request->has('variants')) {
-            foreach ($request->variants as $variantData) {
+            foreach ($request->variants as $index => $variantData) {
+                // Manejar imagen de la variante
+                $variantImage = null;
+                if ($request->hasFile("variant_images.{$index}")) {
+                    $variantImage = $request->file("variant_images.{$index}")->store('variants', 'public');
+                }
+
                 $product->variants()->create([
                     'name' => $variantData['name'],
                     'sku' => $variantData['sku'],
@@ -158,6 +189,7 @@ class ProductController extends Controller
                     'stock' => $variantData['stock'] ?? 0,
                     'min_stock' => $variantData['min_stock'] ?? 5,
                     'is_active' => isset($variantData['is_active']) ? true : false,
+                    'image' => $variantImage,
                 ]);
             }
         }
