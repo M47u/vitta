@@ -38,9 +38,16 @@ class ProductController extends Controller
     {
         $validated = $request->validated();
 
-        // Generar slug si no existe
+        // Generar slug único si no existe
         if (empty($validated['slug'])) {
-            $validated['slug'] = Str::slug($validated['name']);
+            $baseSlug = Str::slug($validated['name']);
+            $slug = $baseSlug;
+            $counter = 1;
+            while (Product::where('slug', $slug)->exists()) {
+                $slug = $baseSlug . '-' . $counter;
+                $counter++;
+            }
+            $validated['slug'] = $slug;
         }
 
         // Calcular porcentaje de descuento solo si hay precio base
@@ -100,9 +107,16 @@ class ProductController extends Controller
     {
         $validated = $request->validated();
 
-        // Actualizar slug si cambia el nombre
+        // Actualizar slug único si cambia el nombre
         if ($validated['name'] !== $product->name && empty($validated['slug'])) {
-            $validated['slug'] = Str::slug($validated['name']);
+            $baseSlug = Str::slug($validated['name']);
+            $slug = $baseSlug;
+            $counter = 1;
+            while (Product::where('slug', $slug)->where('id', '!=', $product->id)->exists()) {
+                $slug = $baseSlug . '-' . $counter;
+                $counter++;
+            }
+            $validated['slug'] = $slug;
         }
 
         // Calcular porcentaje de descuento solo si hay precio base
