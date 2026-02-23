@@ -16,6 +16,24 @@
         </p>
     </div>
 
+    <!-- Quick Access Card -->
+    <div style="background: rgba(16, 185, 129, 0.05); border: 2px solid #10b981; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <h3 style="color: #10b981; font-size: 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
+                    <i class="bi bi-bank2"></i> Datos Bancarios para Transferencias
+                </h3>
+                <p style="color: var(--vitta-pearl); opacity: 0.7; font-size: 14px; margin: 0;">
+                    Configura la información bancaria que verán los clientes al elegir transferencia
+                </p>
+            </div>
+            <a href="{{ route('admin.settings.bank') }}" 
+                style="padding: 12px 24px; background: #10b981; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+                <i class="bi bi-pencil-square"></i> Editar Datos Bancarios
+            </a>
+        </div>
+    </div>
+
     @if(session('success'))
     <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; border-radius: 6px; padding: 16px; margin-bottom: 24px; color: #22c55e;">
         <i class="bi bi-check-circle-fill" style="margin-right: 8px;"></i>

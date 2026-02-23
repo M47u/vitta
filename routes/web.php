@@ -6,10 +6,12 @@ use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\ProductController;
 use App\Http\Controllers\Web\CartController;
 use App\Http\Controllers\Web\CustomerController;
+use App\Http\Controllers\Web\PaymentProofController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Admin\ProductController as AdminProduct;
 use App\Http\Controllers\Admin\OrderController as AdminOrder;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\PendingPaymentController;
 
 // ===== RUTAS PÚBLICAS =====
 
@@ -42,6 +44,12 @@ Route::prefix('checkout')->name('checkout.')->group(function () {
 
 // MercadoPago webhook (sin autenticación)
 Route::post('/mercadopago/webhook', [\App\Http\Controllers\Web\CheckoutController::class, 'webhook'])->name('mercadopago.webhook');
+
+// ===== PAYMENT PROOF ROUTES (PUBLIC) =====
+Route::prefix('payment-proof')->name('payment.proof.')->group(function () {
+    Route::post('/{order}/upload', [PaymentProofController::class, 'upload'])->name('upload');
+    Route::get('/{order}/view', [PaymentProofController::class, 'view'])->name('view');
+});
 
 // ===== RUTAS DE PERFIL (AUTENTICADAS) =====
 
@@ -96,6 +104,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     // Settings
     Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
     Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+    
+    // Bank Settings
+    Route::get('settings/bank', [SettingController::class, 'bankSettings'])->name('settings.bank');
+    Route::put('settings/bank', [SettingController::class, 'updateBankSettings'])->name('settings.bank.update');
+
+    // Pending Payments
+    Route::prefix('payments')->name('payments.')->group(function () {
+        Route::get('pending', [PendingPaymentController::class, 'index'])->name('pending');
+        Route::post('{order}/confirm', [PendingPaymentController::class, 'confirm'])->name('confirm');
+        Route::post('{order}/reminder', [PendingPaymentController::class, 'sendReminder'])->name('reminder');
+        Route::post('{order}/reject', [PendingPaymentController::class, 'reject'])->name('reject');
+    });
 });
 
 // ===== INCLUIR RUTAS DE BREEZE =====

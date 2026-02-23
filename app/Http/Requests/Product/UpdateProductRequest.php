@@ -22,7 +22,7 @@ class UpdateProductRequest extends FormRequest
             'description' => ['required', 'string', 'max:500'],
             'long_description' => ['nullable', 'string', 'max:5000'],
             'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')->ignore($productId)],
-            'base_price' => ['nullable', 'numeric', 'min:0'],
+            'base_price' => ['required', 'numeric', 'min:0'],
             'discount_price' => ['nullable', 'numeric', 'min:0', 'lt:base_price'],
             'category_id' => ['required', 'exists:categories,id'],
             'brand' => ['nullable', 'string', 'max:255'],
@@ -69,6 +69,7 @@ class UpdateProductRequest extends FormRequest
         $this->merge([
             'is_featured' => $this->has('is_featured'),
             'is_active' => $this->has('is_active'),
+            'base_price' => is_numeric($this->input('base_price')) ? $this->input('base_price') : 0,
         ]);
     }
 }

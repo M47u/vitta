@@ -56,9 +56,26 @@
                                 <p style="font-weight: 600; margin-bottom: 4px;">
                                     {{ $order->user ? $order->user->name : ($order->guest_name ?? 'Invitado') }}
                                 </p>
-                                <p style="font-size: 12px; color: rgba(248, 245, 240, 0.6);">
+                                <p style="font-size: 12px; color: rgba(248, 245, 240, 0.6); margin-bottom: 3px;">
+                                    <i class="bi bi-envelope" style="margin-right: 4px;"></i>
                                     {{ $order->user ? $order->user->email : ($order->guest_email ?? 'N/A') }}
                                 </p>
+                                @php
+                                    $phone = $order->shipping_address['recipient_phone']
+                                        ?? ($order->user?->phone ?? null);
+                                @endphp
+                                @if($phone)
+                                    <p style="font-size: 12px; color: #D4AF37; margin-bottom: 3px;">
+                                        <i class="bi bi-telephone" style="margin-right: 4px;"></i>
+                                        {{ $phone }}
+                                    </p>
+                                @endif
+                                @if(!empty($order->shipping_address['full_address']))
+                                    <p style="font-size: 11px; color: rgba(248, 245, 240, 0.45); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;">
+                                        <i class="bi bi-geo-alt" style="margin-right: 4px;"></i>
+                                        {{ $order->shipping_address['full_address'] }}
+                                    </p>
+                                @endif
                             </div>
                         </td>
                         <td>

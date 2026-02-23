@@ -302,12 +302,21 @@ class CheckoutController extends Controller
             );
 
             $shipping = $shippingResult['cost'];
-            $total = $cart->total + $shipping;
+            $paymentMethod = $request->input('payment_method', 'mercadopago');
+
+            // Aplicar 5% de descuento si paga con transferencia
+            $discount = 0;
+            if ($paymentMethod === 'transfer') {
+                $discount = round($cart->total * 0.05);
+            }
+
+            $total = $cart->total - $discount + $shipping;
 
             // Debug logging for total calculation
             Log::info('Order total calculation', [
                 'cart_total' => $cart->total,
                 'shipping_cost' => $shipping,
+                'discount' => $discount,
                 'final_total' => $total
             ]);
 
@@ -318,10 +327,11 @@ class CheckoutController extends Controller
                 'address_id' => ($addressId !== 'guest' && isset($address->id)) ? $address->id : null,
                 'status' => 'pending',
                 'payment_status' => 'pending',
-                'payment_method' => 'mercadopago',
+                'payment_method' => $paymentMethod,
                 'subtotal' => $subtotal,
                 'tax' => $tax,
                 'shipping' => $shipping,
+                'discount' => $discount,
                 'total' => $total,
                 'shipping_address' => [
                     'recipient_name' => $address->recipient_name,
@@ -356,6 +366,20 @@ class CheckoutController extends Controller
                     'quantity' => $cartItem->quantity,
                     'price' => $price,
                     'subtotal' => $subtotal,
+                ]);
+            }
+
+            // Flujo de transferencia bancaria
+            if ($paymentMethod === 'transfer') {
+                DB::commit();
+
+                $cart->items()->delete();
+                $cart->delete();
+
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => route('checkout.success', ['order' => $order->id]),
+                    'order_number' => $order->order_number,
                 ]);
             }
 

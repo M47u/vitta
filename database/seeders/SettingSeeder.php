@@ -117,6 +117,56 @@ class SettingSeeder extends Seeder
                 'label' => 'Umbral de Stock Bajo',
                 'description' => 'Cantidad mínima para mostrar alerta de stock bajo',
             ],
+
+            // Bank Transfer Settings
+            [
+                'key' => 'bank_name',
+                'value' => 'Banco Galicia',
+                'type' => 'text',
+                'group' => 'payment',
+                'label' => 'Nombre del Banco',
+                'description' => 'Banco donde se recibirán las transferencias',
+            ],
+            [
+                'key' => 'bank_account_type',
+                'value' => 'Cuenta Corriente',
+                'type' => 'text',
+                'group' => 'payment',
+                'label' => 'Tipo de Cuenta',
+                'description' => 'Tipo de cuenta bancaria (Cuenta Corriente, Caja de Ahorro, etc.)',
+            ],
+            [
+                'key' => 'bank_holder',
+                'value' => 'Vitta Perfumes SA',
+                'type' => 'text',
+                'group' => 'payment',
+                'label' => 'Titular de la Cuenta',
+                'description' => 'Nombre del titular de la cuenta bancaria',
+            ],
+            [
+                'key' => 'bank_cuit',
+                'value' => '30-12345678-9',
+                'type' => 'text',
+                'group' => 'payment',
+                'label' => 'CUIT/CUIL',
+                'description' => 'CUIT o CUIL del titular de la cuenta',
+            ],
+            [
+                'key' => 'bank_cbu',
+                'value' => '0070123430800012345678',
+                'type' => 'text',
+                'group' => 'payment',
+                'label' => 'CBU',
+                'description' => 'CBU de la cuenta bancaria (22 dígitos)',
+            ],
+            [
+                'key' => 'bank_alias',
+                'value' => 'VITTA.PERFUMES',
+                'type' => 'text',
+                'group' => 'payment',
+                'label' => 'Alias',
+                'description' => 'Alias de la cuenta bancaria',
+            ],
         ];
 
         foreach ($settings as $setting) {

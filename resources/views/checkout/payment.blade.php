@@ -121,7 +121,7 @@
                                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
                                     <i class="bi bi-credit-card-2-front" style="font-size: 24px; color: #009ee3;"></i>
                                     <span style="font-size: 18px; font-weight: 600; color: var(--vitta-pearl);">MercadoPago</span>
-                                    <span style="background: #fbbf24; color: var(--vitta-black); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">-7.5% COM.</span>
+                                    <span style="background: rgba(212,175,55,0.15); color: var(--vitta-gold); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">PRECIO FINAL</span>
                                 </div>
                                 <p style="color: var(--vitta-pearl); opacity: 0.7; font-size: 13px;">
                                     Tarjetas de crédito, débito y otros medios de pago
@@ -145,7 +145,7 @@
                                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
                                     <i class="bi bi-bank2" style="font-size: 24px; color: var(--vitta-gold);"></i>
                                     <span style="font-size: 18px; font-weight: 600; color: var(--vitta-pearl);">Transferencia Bancaria</span>
-                                    <span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">SIN COMISIÓN</span>
+                                    <span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">-5% DESCUENTO</span>
                                 </div>
                                 <p style="color: var(--vitta-pearl); opacity: 0.7; font-size: 13px;">
                                     Te enviaremos los datos bancarios para que realices la transferencia
@@ -245,13 +245,17 @@
                             <span style="color: var(--vitta-pearl); opacity: 0.7;">Envío:</span>
                             <span style="color: var(--vitta-pearl);">${{ number_format($shipping, 0, ',', '.') }}</span>
                         </div>
+                        <div id="discount-row" style="display: none; justify-content: space-between;">
+                            <span style="color: #10b981; font-weight: 600;">Descuento transferencia (5%):</span>
+                            <span style="color: #10b981; font-weight: 600;" id="discount-amount"></span>
+                        </div>
                     </div>
 
                     <div class="golden-line" style="margin: 24px 0;"></div>
 
                     <div style="display: flex; justify-content: space-between; font-size: 20px;">
                         <span style="color: var(--vitta-gold); font-weight: 600;">Total:</span>
-                        <span style="color: var(--vitta-gold); font-weight: 600;">${{ number_format($total, 0, ',', '.') }}</span>
+                        <span id="total-display" style="color: var(--vitta-gold); font-weight: 600;">${{ number_format($total, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
@@ -267,6 +271,19 @@
             const paymentMethodRadios = document.querySelectorAll('input[name="payment_method"]');
             const mercadopagoLabel = document.getElementById('mercadopago-label');
             const transferLabel = document.getElementById('transfer-label');
+            const discountRow = document.getElementById('discount-row');
+            const discountAmount = document.getElementById('discount-amount');
+            const totalDisplay = document.getElementById('total-display');
+
+            const baseTotal = {{ round($total) }};
+            const shippingCost = {{ round($shipping) }};
+            const cartTotal = baseTotal - shippingCost;
+            const transferDiscount = Math.round(cartTotal * 0.05);
+            const transferTotal = baseTotal - transferDiscount;
+
+            function formatARS(n) {
+                return '$' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
 
             // Handle payment method selection styling
             paymentMethodRadios.forEach(radio => {
@@ -277,12 +294,17 @@
                         transferLabel.style.border = '2px solid var(--vitta-gray)';
                         transferLabel.style.background = 'transparent';
                         checkoutBtn.innerHTML = '<i class="bi bi-lock-fill"></i> PROCEDER AL PAGO';
+                        discountRow.style.display = 'none';
+                        totalDisplay.textContent = formatARS(baseTotal);
                     } else if (this.value === 'transfer') {
                         transferLabel.style.border = '2px solid var(--vitta-gold)';
                         transferLabel.style.background = 'rgba(212, 175, 55, 0.05)';
                         mercadopagoLabel.style.border = '2px solid var(--vitta-gray)';
                         mercadopagoLabel.style.background = 'transparent';
                         checkoutBtn.innerHTML = '<i class="bi bi-bank2"></i> CONFIRMAR Y VER DATOS BANCARIOS';
+                        discountAmount.textContent = '-' + formatARS(transferDiscount);
+                        discountRow.style.display = 'flex';
+                        totalDisplay.textContent = formatARS(transferTotal);
                     }
                 });
             });

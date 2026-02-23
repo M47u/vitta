@@ -21,6 +21,10 @@ class Order extends Model
         'status',
         'payment_status',
         'payment_method',
+        'payment_proof',
+        'payment_proof_uploaded_at',
+        'payment_confirmed_at',
+        'payment_reminder_sent_at',
         'subtotal',
         'discount',
         'shipping',
@@ -44,6 +48,9 @@ class Order extends Model
         'paid_at' => 'datetime',
         'shipped_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'payment_proof_uploaded_at' => 'datetime',
+        'payment_confirmed_at' => 'datetime',
+        'payment_reminder_sent_at' => 'datetime',
     ];
 
     // Relationships

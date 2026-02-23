@@ -284,10 +284,23 @@
                 <span>Pedidos</span>
             </a>
 
+            <a href="{{ route('admin.payments.pending') }}"
+                class="sidebar-item {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}">
+                <i class="bi bi-hourglass-split"></i>
+                <span>Pagos Pendientes</span>
+            </a>
+
             <a href="{{ route('admin.settings.index') }}"
-                class="sidebar-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                class="sidebar-item {{ request()->routeIs('admin.settings.index') ? 'active' : '' }}">
                 <i class="bi bi-gear-fill"></i>
                 <span>Configuración</span>
+            </a>
+
+            <a href="{{ route('admin.settings.bank') }}"
+                class="sidebar-item {{ request()->routeIs('admin.settings.bank*') ? 'active' : '' }}"
+                style="padding-left: 48px; font-size: 14px;">
+                <i class="bi bi-bank2"></i>
+                <span>Datos Bancarios</span>
             </a>
 
             <div style="border-top: 1px solid rgba(212, 175, 55, 0.2); margin: 16px 0;"></div>
