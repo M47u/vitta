@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             FragranceNoteSeeder::class,
             ProductSeeder::class,
+            CatalogProductsSeeder::class, // Nuevo catálogo de productos
         ]);
     }
 }
